@@ -53,6 +53,13 @@ export default function Copilot() {
     enabled: !!currentOrg,
   });
 
+  // Fetch active knowledge base
+  const { data: knowledgeBase = [] } = useQuery({
+    queryKey: ['knowledge', currentOrg?.id],
+    queryFn: () => currentOrg ? base44.entities.KnowledgeBase.filter({ org_id: currentOrg.id, is_active: true }) : [],
+    enabled: !!currentOrg,
+  });
+
   // Create query mutation
   const createQueryMutation = useMutation({
     mutationFn: async (prompt) => {
@@ -85,9 +92,26 @@ export default function Copilot() {
         integrationContext = `\n\n${contextParts.join('\n')}\n\nYou can reference these tools if relevant to the user's question.`;
       }
 
-      // Get AI response with integration context
+      // Gather context from knowledge base
+      let knowledgeContext = '';
+      const usedKnowledge = [];
+
+      if (knowledgeBase.length > 0) {
+        const contextParts = ['Organization knowledge base:'];
+        
+        for (const kb of knowledgeBase.slice(0, 5)) {
+          contextParts.push(`\n## ${kb.title}`);
+          if (kb.category) contextParts.push(`Category: ${kb.category}`);
+          contextParts.push(`Content: ${kb.content.slice(0, 500)}...`);
+          usedKnowledge.push(kb.id);
+        }
+
+        knowledgeContext = `\n\n${contextParts.join('\n')}\n\nUse this organization-specific knowledge to provide accurate, context-aware answers.`;
+      }
+
+      // Get AI response with all context
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a helpful AI copilot for a team. Provide clear, concise answers. Be direct and actionable.${integrationContext}
+        prompt: `You are a helpful AI copilot for a team. Provide clear, concise answers. Be direct and actionable.${integrationContext}${knowledgeContext}
 
 User question: ${prompt}
 
@@ -103,7 +127,18 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
         status: 'completed',
         latency_ms: latency,
         integration_refs: usedIntegrations.length > 0 ? usedIntegrations : undefined,
+        context_refs: usedKnowledge.length > 0 ? usedKnowledge : undefined,
       });
+
+      // Update knowledge base usage
+      if (usedKnowledge.length > 0) {
+        for (const kbId of usedKnowledge) {
+          await base44.entities.KnowledgeBase.update(kbId, {
+            usage_count: (knowledgeBase.find(kb => kb.id === kbId)?.usage_count || 0) + 1,
+            last_used_at: new Date().toISOString(),
+          });
+        }
+      }
 
       // Log audit event
       const user = await base44.auth.me();
@@ -117,10 +152,11 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
         status: 'success',
         details: {
           integrations_used: usedIntegrations.length,
+          knowledge_docs_used: usedKnowledge.length,
         },
       });
 
-      return { ...query, response, latency_ms: latency, status: 'completed', integration_refs: usedIntegrations };
+      return { ...query, response, latency_ms: latency, status: 'completed', integration_refs: usedIntegrations, context_refs: usedKnowledge };
     },
     onSuccess: (newQuery) => {
       queryClient.invalidateQueries({ queryKey: ['queries'] });

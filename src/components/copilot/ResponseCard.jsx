@@ -159,16 +159,23 @@ export default function ResponseCard({
         )}
       </div>
 
-      {/* Integration References */}
-      {query.integration_refs?.length > 0 && (
-        <div className="px-4 pb-2">
+      {/* Context Sources */}
+      {(query.integration_refs?.length > 0 || query.context_refs?.length > 0) && (
+        <div className="px-4 pb-2 border-t border-slate-100 pt-3">
+          <p className="text-xs text-slate-500 mb-1.5">Sources used:</p>
           <div className="flex flex-wrap gap-1">
-            {query.integration_refs.map((ref, idx) => (
+            {query.integration_refs?.map((ref, idx) => (
               <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                 <Zap className="h-3 w-3 mr-1" />
                 {ref.integration_type}
               </Badge>
             ))}
+            {query.context_refs?.length > 0 && (
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                <BookmarkCheck className="h-3 w-3 mr-1" />
+                {query.context_refs.length} doc{query.context_refs.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
         </div>
       )}

@@ -5,6 +5,7 @@ import Docs from './pages/Docs';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import SystemHealth from './pages/SystemHealth';
+import Knowledge from './pages/Knowledge';
 import __Layout from './Layout.jsx';
 
 
@@ -16,6 +17,7 @@ export const PAGES = {
     "Onboarding": Onboarding,
     "Settings": Settings,
     "SystemHealth": SystemHealth,
+    "Knowledge": Knowledge,
 }
 
 export const pagesConfig = {

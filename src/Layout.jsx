@@ -23,9 +23,9 @@ import GlobalSearch from '@/components/shared/GlobalSearch';
 const NAV_ITEMS = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
   { name: 'Copilot', href: 'Copilot', icon: Sparkles },
+  { name: 'Knowledge', href: 'Knowledge', icon: Book },
   { name: 'Approvals', href: 'Approvals', icon: CheckCircle },
   { name: 'System Health', href: 'SystemHealth', icon: Activity },
-  { name: 'Docs', href: 'Docs', icon: Book },
   { name: 'Settings', href: 'Settings', icon: Settings },
 ];
 
