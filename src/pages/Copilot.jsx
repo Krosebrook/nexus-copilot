@@ -46,6 +46,13 @@ export default function Copilot() {
     enabled: !!currentOrg,
   });
 
+  // Fetch active integrations
+  const { data: integrations = [] } = useQuery({
+    queryKey: ['integrations', currentOrg?.id],
+    queryFn: () => currentOrg ? base44.entities.Integration.filter({ org_id: currentOrg.id, status: 'active' }) : [],
+    enabled: !!currentOrg,
+  });
+
   // Create query mutation
   const createQueryMutation = useMutation({
     mutationFn: async (prompt) => {
@@ -59,9 +66,28 @@ export default function Copilot() {
         response_type: detectResponseType(prompt),
       });
 
-      // Get AI response
+      // Gather context from active integrations
+      let integrationContext = '';
+      const usedIntegrations = [];
+
+      if (integrations.length > 0) {
+        const contextParts = ['Available integrations for context:'];
+        
+        for (const integration of integrations) {
+          contextParts.push(`- ${integration.name} (${integration.type}): ${integration.capabilities?.join(', ') || 'connected'}`);
+          usedIntegrations.push({
+            integration_id: integration.id,
+            integration_type: integration.type,
+            data_used: `Connected ${integration.type} workspace`,
+          });
+        }
+
+        integrationContext = `\n\n${contextParts.join('\n')}\n\nYou can reference these tools if relevant to the user's question.`;
+      }
+
+      // Get AI response with integration context
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a helpful AI copilot for a team. Provide clear, concise answers. Be direct and actionable.
+        prompt: `You are a helpful AI copilot for a team. Provide clear, concise answers. Be direct and actionable.${integrationContext}
 
 User question: ${prompt}
 
@@ -71,11 +97,12 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
 
       const latency = Date.now() - startTime;
 
-      // Update query with response
+      // Update query with response and integration references
       await base44.entities.Query.update(query.id, {
         response: response,
         status: 'completed',
         latency_ms: latency,
+        integration_refs: usedIntegrations.length > 0 ? usedIntegrations : undefined,
       });
 
       // Log audit event
@@ -88,9 +115,12 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
         resource_type: 'Query',
         resource_id: query.id,
         status: 'success',
+        details: {
+          integrations_used: usedIntegrations.length,
+        },
       });
 
-      return { ...query, response, latency_ms: latency, status: 'completed' };
+      return { ...query, response, latency_ms: latency, status: 'completed', integration_refs: usedIntegrations };
     },
     onSuccess: (newQuery) => {
       queryClient.invalidateQueries({ queryKey: ['queries'] });
