@@ -462,7 +462,7 @@ npm run dev
 **Application Structure**:
 - **8 main pages**: Dashboard, Copilot, Knowledge, Approvals, Docs, Settings, SystemHealth, Onboarding
 - **65+ components**: Organized by feature (admin, copilot, shared, ui)
-- **Base44 Entities**: Query, Organization, Membership, Integration, KnowledgeBase, AuditLog
+- **Base44 Entities**: Query, Organization, Membership, Integration, KnowledgeBase, AuditLog, Approval, BackgroundJob
 - **AI Integration**: Base44 Core LLM integration with context awareness
 
 **Known Constraints**:
