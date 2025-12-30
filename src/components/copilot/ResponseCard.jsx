@@ -159,6 +159,20 @@ export default function ResponseCard({
         )}
       </div>
 
+      {/* Integration References */}
+      {query.integration_refs?.length > 0 && (
+        <div className="px-4 pb-2">
+          <div className="flex flex-wrap gap-1">
+            {query.integration_refs.map((ref, idx) => (
+              <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                <Zap className="h-3 w-3 mr-1" />
+                {ref.integration_type}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tags */}
       {query.tags?.length > 0 && (
         <div className="px-4 pb-4 flex flex-wrap gap-1">
