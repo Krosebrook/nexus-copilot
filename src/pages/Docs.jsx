@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Book, Layout, Database, Shield, Wrench, 
-  HelpCircle, ChevronRight, Search, ExternalLink
+  HelpCircle, ChevronRight, Search
 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";

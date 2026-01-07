@@ -4,7 +4,7 @@ import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { 
   Sparkles, LayoutDashboard, Settings, Activity, 
-  CheckCircle, Book, Search, LogOut, User, ChevronDown,
+  CheckCircle, Book, Search, LogOut, ChevronDown,
   Menu, X
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";

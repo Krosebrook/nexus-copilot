@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  Book, Plus, Upload, Link as LinkIcon, FileText, 
-  MoreHorizontal, Trash2, Edit, ToggleLeft, ToggleRight, Loader2
+  Book, Plus, Link as LinkIcon, FileText, 
+  MoreHorizontal, Trash2, Loader2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

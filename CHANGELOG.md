@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security policy and vulnerability reporting process
 - Architecture documentation and decision records
 
+### Fixed
+- All 20 ESLint errors related to unused imports across 13 files
+
 ## [0.1.0] - 2024-12-30
 
 ### Added
@@ -51,8 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Known Issues
 - No test infrastructure in place
-- 8 npm security vulnerabilities (6 moderate, 2 high)
-- 20 ESLint errors related to unused imports
+- 8 npm security vulnerabilities (6 moderate, 1 high, 1 critical)
 - Missing comprehensive API documentation
 - No deployment guide available
 
