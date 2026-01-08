@@ -13,8 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security policy and vulnerability reporting process
 - Architecture documentation and decision records
 
+### Changed
+- Updated `glob` to v11.0.0 (from v10.4.5) - fixes high severity command injection vulnerability
+- Updated `js-yaml` to v4.1.1 (from v4.1.0) - fixes moderate severity prototype pollution vulnerability
+- Updated `mdast-util-to-hast` to v13.2.1 (from v13.2.0) - fixes moderate severity unsanitized class attribute vulnerability
+- Updated `vite` to v6.4.1 (from v6.1.0) - fixes moderate severity server.fs.deny bypass vulnerability
+
+### Removed
+- `jspdf` package (unused dependency with critical/high severity DoS and ReDoS vulnerabilities)
+- `html2canvas` package (unused dependency of jspdf with moderate severity XSS vulnerability)
+- `react-quill` package (unused dependency with moderate severity XSS vulnerability)
+- `dompurify` package (unused dependency of jspdf with moderate severity XSS vulnerability)
+
 ### Fixed
 - All 20 ESLint errors related to unused imports across 13 files
+- All 8 npm security vulnerabilities (6 moderate, 1 high, 1 critical)
 
 ## [0.1.0] - 2024-12-30
 
