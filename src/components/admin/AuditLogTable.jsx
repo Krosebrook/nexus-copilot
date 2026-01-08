@@ -1,7 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { 
-  Shield, User, Database, Plug, Settings, AlertCircle,
+  Shield, User, Database, Plug, Settings,
   CheckCircle, XCircle, Clock
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";

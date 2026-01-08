@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
-  CheckCircle, AlertTriangle, XCircle, Activity,
-  Database, Server, Zap, Clock
+  CheckCircle, AlertTriangle, XCircle, Server, Zap, Clock
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";

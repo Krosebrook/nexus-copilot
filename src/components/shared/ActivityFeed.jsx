@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { 
   MessageSquare, UserPlus, Settings, Database, 
   Plug, Shield, AlertCircle, CheckCircle

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Settings as SettingsIcon, Users, Shield, Plug, 
-  Activity, FileText, Bell, Palette, UserPlus
+  Activity, UserPlus
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
