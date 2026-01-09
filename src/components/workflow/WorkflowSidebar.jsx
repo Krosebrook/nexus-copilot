@@ -9,6 +9,8 @@ const TRIGGER_INFO = {
 };
 
 const STEP_EXAMPLES = [
+  { type: 'ai_agent', desc: 'Autonomous AI that performs multi-step tasks', category: 'AI' },
+  { type: 'knowledge_query', desc: 'Search knowledge base for context', category: 'AI' },
   { type: 'condition', desc: 'Branch workflow based on conditions', category: 'Logic' },
   { type: 'transform', desc: 'Transform and manipulate data', category: 'Logic' },
   { type: 'integration_action', desc: 'Perform integration-specific actions', category: 'Integration' },
@@ -34,7 +36,7 @@ export default function WorkflowSidebar({ workflow }) {
       <div>
         <h3 className="text-sm font-semibold text-slate-900 mb-3">Available Steps</h3>
         <div className="space-y-3">
-          {['Logic', 'Integration', 'Action', 'Utility'].map(category => (
+          {['AI', 'Logic', 'Integration', 'Action', 'Utility'].map(category => (
             <div key={category}>
               <p className="text-xs font-semibold text-slate-600 mb-1.5">{category}</p>
               <div className="space-y-1.5">

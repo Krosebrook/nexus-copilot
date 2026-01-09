@@ -10,6 +10,8 @@ const STEP_TYPES = [
   { value: 'send_email', label: 'Send Email', category: 'action' },
   { value: 'webhook', label: 'Call Webhook', category: 'action' },
   { value: 'integration_action', label: 'Integration Action', category: 'action' },
+  { value: 'ai_agent', label: 'AI Agent Task', category: 'ai' },
+  { value: 'knowledge_query', label: 'Query Knowledge Base', category: 'ai' },
   { value: 'condition', label: 'If/Else Condition', category: 'logic' },
   { value: 'transform', label: 'Transform Data', category: 'logic' },
   { value: 'delay', label: 'Delay', category: 'utility' },
@@ -18,17 +20,22 @@ const STEP_TYPES = [
 export default function WorkflowStepCard({ step, index, isEditing, onUpdate, onRemove }) {
   const stepType = STEP_TYPES.find(t => t.value === step.config?.action);
   const isCondition = step.config?.action === 'condition';
+  const isAI = stepType?.category === 'ai';
   
   return (
     <div className={`border rounded-lg p-4 ${
-      isCondition ? 'bg-purple-50 border-purple-200' : 'bg-white border-slate-200'
+      isCondition ? 'bg-purple-50 border-purple-200' : 
+      isAI ? 'bg-blue-50 border-blue-200' :
+      'bg-white border-slate-200'
     }`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            isCondition ? 'bg-purple-500 text-white' : 'bg-slate-100'
+            isCondition ? 'bg-purple-500 text-white' : 
+            isAI ? 'bg-blue-500 text-white' :
+            'bg-slate-100'
           }`}>
-            {isCondition ? '?' : index + 1}
+            {isCondition ? '?' : isAI ? '🤖' : index + 1}
           </div>
           <div>
             <p className="font-medium text-slate-900">
@@ -161,6 +168,60 @@ export default function WorkflowStepCard({ step, index, isEditing, onUpdate, onR
               />
             </>
           )}
+
+          {step.config?.action === 'ai_agent' && (
+            <>
+              <Input
+                placeholder="Agent goal (e.g., analyze data and create report)"
+                value={step.config?.agent_goal || ''}
+                onChange={(e) => onUpdate({ 
+                  config: { ...step.config, agent_goal: e.target.value } 
+                })}
+              />
+              <Select
+                value={step.config?.agent_autonomy || 'supervised'}
+                onValueChange={(agent_autonomy) => onUpdate({ 
+                  config: { ...step.config, agent_autonomy } 
+                })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Autonomy level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="supervised">Supervised - Confirm actions</SelectItem>
+                  <SelectItem value="semi_autonomous">Semi-autonomous - Auto-approve safe actions</SelectItem>
+                  <SelectItem value="autonomous">Autonomous - Full self-direction</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Max steps (default: 10)"
+                type="number"
+                value={step.config?.max_steps || '10'}
+                onChange={(e) => onUpdate({ 
+                  config: { ...step.config, max_steps: e.target.value } 
+                })}
+              />
+            </>
+          )}
+
+          {step.config?.action === 'knowledge_query' && (
+            <>
+              <Input
+                placeholder="Search query or keywords"
+                value={step.config?.query || ''}
+                onChange={(e) => onUpdate({ 
+                  config: { ...step.config, query: e.target.value } 
+                })}
+              />
+              <Input
+                placeholder="Category filter (optional)"
+                value={step.config?.category_filter || ''}
+                onChange={(e) => onUpdate({ 
+                  config: { ...step.config, category_filter: e.target.value } 
+                })}
+              />
+            </>
+          )}
         </div>
       ) : (
         <div className="text-sm text-slate-600">
@@ -170,6 +231,8 @@ export default function WorkflowStepCard({ step, index, isEditing, onUpdate, onR
           {step.config?.condition && <span className="block text-slate-500">If: {step.config.condition}</span>}
           {step.config?.integration_type && <span className="block text-slate-500 capitalize">{step.config.integration_type}</span>}
           {step.config?.expression && <span className="block text-slate-500">Transform: {step.config.expression}</span>}
+          {step.config?.agent_goal && <span className="block text-slate-500">Goal: {step.config.agent_goal}</span>}
+          {step.config?.query && <span className="block text-slate-500">Query: {step.config.query}</span>}
         </div>
       )}
     </div>
