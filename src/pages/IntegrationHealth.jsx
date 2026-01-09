@@ -12,17 +12,84 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import IntegrationHealthCard from '@/components/integrations/IntegrationHealthCard';
+import IntegrationAlerts from '@/components/integrations/IntegrationAlerts';
+
+// Health scoring thresholds
+const HEALTH_THRESHOLDS = {
+  ERROR_RATE_WARNING: 0.3, // 30% errors in last 10 actions
+  SYNC_FAILURE_WARNING: 3, // 3 consecutive sync failures
+  STALE_THRESHOLD_HOURS: 24, // No sync in 24 hours
+};
+
+function calculateIntegrationHealth(integration, recentLogs) {
+  const issues = [];
+  const integrationLogs = recentLogs.filter(log => log.resource_id === integration.id);
+  
+  // Check error rate
+  if (integrationLogs.length >= 5) {
+    const errorCount = integrationLogs.slice(0, 10).filter(log => log.status === 'failure').length;
+    const errorRate = errorCount / Math.min(integrationLogs.length, 10);
+    if (errorRate >= HEALTH_THRESHOLDS.ERROR_RATE_WARNING) {
+      issues.push({
+        type: 'high_error_rate',
+        severity: 'warning',
+        message: `${Math.round(errorRate * 100)}% error rate detected`,
+      });
+    }
+  }
+
+  // Check for consecutive sync failures
+  const recentSyncs = integrationLogs.filter(log => log.action === 'integration_sync').slice(0, 5);
+  const consecutiveFailures = recentSyncs.findIndex(log => log.status === 'success');
+  if (consecutiveFailures >= HEALTH_THRESHOLDS.SYNC_FAILURE_WARNING || 
+      (consecutiveFailures === -1 && recentSyncs.length >= HEALTH_THRESHOLDS.SYNC_FAILURE_WARNING)) {
+    issues.push({
+      type: 'sync_failures',
+      severity: 'critical',
+      message: `${consecutiveFailures === -1 ? recentSyncs.length : consecutiveFailures} consecutive sync failures`,
+    });
+  }
+
+  // Check if integration is stale
+  if (integration.status === 'active' && integration.last_sync_at) {
+    const hoursSinceSync = (Date.now() - new Date(integration.last_sync_at).getTime()) / (1000 * 60 * 60);
+    if (hoursSinceSync > HEALTH_THRESHOLDS.STALE_THRESHOLD_HOURS) {
+      issues.push({
+        type: 'stale_sync',
+        severity: 'warning',
+        message: `No sync in ${Math.round(hoursSinceSync)} hours`,
+      });
+    }
+  }
+
+  // Check if integration is in error state
+  if (integration.status === 'error') {
+    issues.push({
+      type: 'error_state',
+      severity: 'critical',
+      message: integration.error_message || 'Integration in error state',
+    });
+  }
+
+  return {
+    healthy: issues.length === 0,
+    issues,
+    score: Math.max(0, 100 - (issues.length * 25)),
+  };
+}
 
 export default function IntegrationHealth() {
   const [currentOrg, setCurrentOrg] = useState(null);
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const fetchOrg = async () => {
       try {
-        const user = await base44.auth.me();
+        const userData = await base44.auth.me();
+        setUser(userData);
         const memberships = await base44.entities.Membership.filter({ 
-          user_email: user.email, 
+          user_email: userData.email, 
           status: 'active' 
         });
         if (memberships.length > 0) {
@@ -47,8 +114,45 @@ export default function IntegrationHealth() {
     queryFn: () => currentOrg ? base44.entities.AuditLog.filter({ 
       org_id: currentOrg.id, 
       action_category: 'integration' 
-    }, '-created_date', 20) : [],
+    }, '-created_date', 100) : [],
     enabled: !!currentOrg,
+  });
+
+  // Calculate health for all integrations
+  const integrationsWithHealth = integrations.map(integration => ({
+    ...integration,
+    health: calculateIntegrationHealth(integration, auditLogs),
+  }));
+
+  const atRiskIntegrations = integrationsWithHealth.filter(i => !i.health.healthy);
+
+  // Send notification for critical issues
+  const notifyMutation = useMutation({
+    mutationFn: async (integration) => {
+      const criticalIssues = integration.health.issues.filter(i => i.severity === 'critical');
+      if (criticalIssues.length === 0) return;
+
+      const issuesList = criticalIssues.map(i => `• ${i.message}`).join('\n');
+      await base44.integrations.Core.SendEmail({
+        to: user.email,
+        subject: `Integration Alert: ${integration.name} Requires Attention`,
+        body: `The ${integration.name} integration has detected critical issues:\n\n${issuesList}\n\nPlease review the integration health dashboard and take action.`,
+        from_name: currentOrg?.name || 'AI Copilot',
+      });
+
+      await base44.entities.AuditLog.create({
+        org_id: currentOrg.id,
+        actor_email: 'system',
+        action: 'integration_alert_sent',
+        action_category: 'integration',
+        resource_type: 'Integration',
+        resource_id: integration.id,
+        status: 'success',
+        details: { issues: criticalIssues },
+      });
+    },
+    onSuccess: () => toast.success('Alert notification sent'),
+    onError: () => toast.error('Failed to send notification'),
   });
 
   const syncMutation = useMutation({
@@ -119,6 +223,7 @@ export default function IntegrationHealth() {
     error: integrations.filter(i => i.status === 'error').length,
     pending_auth: integrations.filter(i => i.status === 'pending_auth').length,
     inactive: integrations.filter(i => i.status === 'inactive').length,
+    atRisk: atRiskIntegrations.length,
   };
 
   if (isLoading) {
@@ -196,41 +301,54 @@ export default function IntegrationHealth() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={cn(statusCounts.atRisk > 0 && "border-2 border-amber-500")}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">Inactive</p>
-                  <p className="text-2xl font-semibold text-slate-600">{statusCounts.inactive}</p>
+                  <p className="text-sm text-slate-500">At Risk</p>
+                  <p className="text-2xl font-semibold text-amber-600">{statusCounts.atRisk}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-slate-400" />
+                <AlertTriangle className={cn("h-8 w-8", statusCounts.atRisk > 0 ? "text-amber-500" : "text-slate-400")} />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Integration List */}
-        {integrations.length === 0 ? (
-          <Card className="p-12 text-center">
-            <Plug className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">No integrations connected</h3>
-            <p className="text-slate-500 mb-4">Connect your first integration to get started</p>
-            <Button>Add Integration</Button>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {integrations.map((integration) => (
-              <IntegrationHealthCard
-                key={integration.id}
-                integration={integration}
-                onSync={() => syncMutation.mutate(integration)}
-                onReconnect={() => reconnectMutation.mutate(integration)}
-                onRemove={() => removeMutation.mutate(integration)}
-                isSyncing={syncMutation.isPending}
-              />
-            ))}
-          </div>
+        {/* Alerts Section */}
+        {atRiskIntegrations.length > 0 && (
+          <IntegrationAlerts 
+            integrations={atRiskIntegrations}
+            onNotify={(integration) => notifyMutation.mutate(integration)}
+            isNotifying={notifyMutation.isPending}
+          />
         )}
+
+        {/* Integration List */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">All Integrations</h2>
+          {integrations.length === 0 ? (
+            <Card className="p-12 text-center">
+              <Plug className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">No integrations connected</h3>
+              <p className="text-slate-500 mb-4">Connect your first integration to get started</p>
+              <Button>Add Integration</Button>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {integrationsWithHealth.map((integration) => (
+                <IntegrationHealthCard
+                  key={integration.id}
+                  integration={integration}
+                  health={integration.health}
+                  onSync={() => syncMutation.mutate(integration)}
+                  onReconnect={() => reconnectMutation.mutate(integration)}
+                  onRemove={() => removeMutation.mutate(integration)}
+                  isSyncing={syncMutation.isPending}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Recent Activity */}
         {auditLogs.length > 0 && (

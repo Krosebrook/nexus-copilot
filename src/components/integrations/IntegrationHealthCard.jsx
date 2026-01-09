@@ -59,6 +59,7 @@ const STATUS_CONFIG = {
 
 export default function IntegrationHealthCard({ 
   integration, 
+  health,
   onSync, 
   onReconnect, 
   onRemove,
@@ -67,14 +68,30 @@ export default function IntegrationHealthCard({
   const [showDetails, setShowDetails] = useState(false);
   const statusConfig = STATUS_CONFIG[integration.status] || STATUS_CONFIG.inactive;
   const StatusIcon = statusConfig.icon;
+  const hasIssues = health && !health.healthy;
+  const hasCriticalIssues = health?.issues?.some(i => i.severity === 'critical');
 
   return (
-    <Card className={cn("border-2", statusConfig.border)}>
+    <Card className={cn(
+      "border-2", 
+      hasCriticalIssues ? "border-red-300 bg-red-50/30" : 
+      hasIssues ? "border-amber-300 bg-amber-50/30" : 
+      statusConfig.border
+    )}>
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
           {/* Icon */}
-          <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl">
+          <div className={cn(
+            "h-12 w-12 rounded-xl flex items-center justify-center text-2xl relative",
+            hasCriticalIssues ? "bg-red-100" : hasIssues ? "bg-amber-100" : "bg-slate-100"
+          )}>
             {INTEGRATION_ICONS[integration.type] || <Plug className="h-6 w-6 text-slate-400" />}
+            {hasCriticalIssues && (
+              <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white" />
+            )}
+            {hasIssues && !hasCriticalIssues && (
+              <div className="absolute -top-1 -right-1 h-4 w-4 bg-amber-500 rounded-full border-2 border-white" />
+            )}
           </div>
 
           {/* Info */}
@@ -116,13 +133,71 @@ export default function IntegrationHealthCard({
               </div>
             </div>
 
-            {/* Error Message */}
-            {integration.error_message && (
+            {/* Health Issues */}
+            {hasIssues && (
+              <div className="mb-3 space-y-2">
+                {health.issues.map((issue, idx) => (
+                  <div 
+                    key={idx}
+                    className={cn(
+                      "p-3 rounded-lg border",
+                      issue.severity === 'critical' 
+                        ? "bg-red-50 border-red-200" 
+                        : "bg-amber-50 border-amber-200"
+                    )}
+                  >
+                    <p className={cn(
+                      "text-sm flex items-start gap-2",
+                      issue.severity === 'critical' ? "text-red-700" : "text-amber-700"
+                    )}>
+                      <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>
+                        <span className="font-medium">
+                          {issue.severity === 'critical' ? 'Critical: ' : 'Warning: '}
+                        </span>
+                        {issue.message}
+                      </span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Error Message (if not covered by health issues) */}
+            {integration.error_message && !hasIssues && (
               <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-700 flex items-start gap-2">
                   <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <span>{integration.error_message}</span>
                 </p>
+              </div>
+            )}
+
+            {/* Health Score */}
+            {health && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-slate-500">Health Score</span>
+                  <span className={cn(
+                    "text-xs font-medium",
+                    health.score >= 75 ? "text-green-600" :
+                    health.score >= 50 ? "text-amber-600" :
+                    "text-red-600"
+                  )}>
+                    {health.score}/100
+                  </span>
+                </div>
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full transition-all duration-300",
+                      health.score >= 75 ? "bg-green-500" :
+                      health.score >= 50 ? "bg-amber-500" :
+                      "bg-red-500"
+                    )}
+                    style={{ width: `${health.score}%` }}
+                  />
+                </div>
               </div>
             )}
 
