@@ -8,12 +8,14 @@ import { toast } from "sonner";
 import WorkflowList from '@/components/workflow/WorkflowList';
 import WorkflowCanvas from '@/components/workflow/WorkflowCanvas';
 import WorkflowSidebar from '@/components/workflow/WorkflowSidebar';
+import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog';
 import PermissionGuard from '@/components/rbac/PermissionGuard';
 
 export default function WorkflowBuilder() {
   const [currentOrg, setCurrentOrg] = useState(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showTriggerDialog, setShowTriggerDialog] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -82,6 +84,19 @@ export default function WorkflowBuilder() {
     },
   });
 
+  const updateTriggerMutation = useMutation({
+    mutationFn: async ({ trigger_type, trigger_config }) => {
+      await base44.entities.Workflow.update(selectedWorkflow.id, {
+        trigger_type,
+        trigger_config,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      toast.success('Trigger updated');
+    },
+  });
+
   return (
     <PermissionGuard permission={['manage_integrations', 'admin']} requireAny fallback={
       <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
@@ -126,12 +141,16 @@ export default function WorkflowBuilder() {
                 <div className="bg-white border-b border-slate-200 p-4 flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">{selectedWorkflow.name}</h2>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-slate-500 capitalize">
+                      {selectedWorkflow.trigger_type.replace('_', ' ')} trigger • 
                       {selectedWorkflow.is_active ? 'Active' : 'Inactive'} • 
-                      {selectedWorkflow.execution_count || 0} executions
+                      {selectedWorkflow.execution_count || 0} runs
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => setShowTriggerDialog(true)}>
+                      Configure Trigger
+                    </Button>
                     {!isEditing ? (
                       <Button onClick={() => setIsEditing(true)}>Edit Workflow</Button>
                     ) : (
@@ -172,6 +191,19 @@ export default function WorkflowBuilder() {
             )}
           </div>
         </div>
+
+        {/* Trigger Config Dialog */}
+        {selectedWorkflow && (
+          <TriggerConfigDialog
+            open={showTriggerDialog}
+            onOpenChange={setShowTriggerDialog}
+            workflow={selectedWorkflow}
+            onSave={(triggerConfig) => {
+              updateTriggerMutation.mutate(triggerConfig);
+              setSelectedWorkflow({ ...selectedWorkflow, ...triggerConfig });
+            }}
+          />
+        )}
       </div>
     </PermissionGuard>
   );

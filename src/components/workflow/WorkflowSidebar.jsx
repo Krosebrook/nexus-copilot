@@ -9,11 +9,13 @@ const TRIGGER_INFO = {
 };
 
 const STEP_EXAMPLES = [
-  { type: 'send_notification', desc: 'Send a message to team channels' },
-  { type: 'create_query', desc: 'Ask Copilot a follow-up question' },
-  { type: 'send_email', desc: 'Email team members or external contacts' },
-  { type: 'webhook', desc: 'Call external APIs or services' },
-  { type: 'delay', desc: 'Wait before executing next step' },
+  { type: 'condition', desc: 'Branch workflow based on conditions', category: 'Logic' },
+  { type: 'transform', desc: 'Transform and manipulate data', category: 'Logic' },
+  { type: 'integration_action', desc: 'Perform integration-specific actions', category: 'Integration' },
+  { type: 'send_notification', desc: 'Send a message to team channels', category: 'Action' },
+  { type: 'send_email', desc: 'Email team members or external contacts', category: 'Action' },
+  { type: 'webhook', desc: 'Call external APIs or services', category: 'Action' },
+  { type: 'delay', desc: 'Wait before executing next step', category: 'Utility' },
 ];
 
 export default function WorkflowSidebar({ workflow }) {
@@ -30,14 +32,21 @@ export default function WorkflowSidebar({ workflow }) {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-slate-900 mb-3">Available Actions</h3>
-        <div className="space-y-2">
-          {STEP_EXAMPLES.map((example) => (
-            <div key={example.type} className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-sm font-medium text-slate-900 mb-1">
-                {example.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-              </p>
-              <p className="text-xs text-slate-500">{example.desc}</p>
+        <h3 className="text-sm font-semibold text-slate-900 mb-3">Available Steps</h3>
+        <div className="space-y-3">
+          {['Logic', 'Integration', 'Action', 'Utility'].map(category => (
+            <div key={category}>
+              <p className="text-xs font-semibold text-slate-600 mb-1.5">{category}</p>
+              <div className="space-y-1.5">
+                {STEP_EXAMPLES.filter(e => e.category === category).map((example) => (
+                  <div key={example.type} className="p-2.5 bg-slate-50 rounded-lg">
+                    <p className="text-xs font-medium text-slate-900">
+                      {example.type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    </p>
+                    <p className="text-xs text-slate-500 leading-tight mt-0.5">{example.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
