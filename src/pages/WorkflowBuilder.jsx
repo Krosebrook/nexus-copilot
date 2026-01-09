@@ -9,6 +9,8 @@ import WorkflowList from '@/components/workflow/WorkflowList';
 import WorkflowCanvas from '@/components/workflow/WorkflowCanvas';
 import WorkflowSidebar from '@/components/workflow/WorkflowSidebar';
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog';
+import WorkflowSuggestions from '@/components/workflow/WorkflowSuggestions';
+import NextStepSuggestions from '@/components/workflow/NextStepSuggestions';
 import PermissionGuard from '@/components/rbac/PermissionGuard';
 
 export default function WorkflowBuilder() {
@@ -16,6 +18,9 @@ export default function WorkflowBuilder() {
   const [selectedWorkflow, setSelectedWorkflow] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showTriggerDialog, setShowTriggerDialog] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [nextStepSuggestions, setNextStepSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -40,6 +45,18 @@ export default function WorkflowBuilder() {
   const { data: workflows = [] } = useQuery({
     queryKey: ['workflows', currentOrg?.id],
     queryFn: () => currentOrg ? base44.entities.Workflow.filter({ org_id: currentOrg.id }, '-updated_date') : [],
+    enabled: !!currentOrg,
+  });
+
+  const { data: integrations = [] } = useQuery({
+    queryKey: ['integrations', currentOrg?.id],
+    queryFn: () => currentOrg ? base44.entities.Integration.filter({ org_id: currentOrg.id }) : [],
+    enabled: !!currentOrg,
+  });
+
+  const { data: recentQueries = [] } = useQuery({
+    queryKey: ['recent-queries', currentOrg?.id],
+    queryFn: () => currentOrg ? base44.entities.Query.filter({ org_id: currentOrg.id }, '-created_date', 20) : [],
     enabled: !!currentOrg,
   });
 
@@ -97,6 +114,173 @@ export default function WorkflowBuilder() {
     },
   });
 
+  const generateSuggestions = async () => {
+    if (!currentOrg) return;
+    
+    setLoadingSuggestions(true);
+    try {
+      const integrationSummary = integrations.map(i => `${i.name} (${i.type})`).join(', ');
+      const queryPatterns = recentQueries.slice(0, 10).map(q => q.prompt).join('; ');
+      const existingWorkflows = workflows.map(w => w.name).join(', ');
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Based on this workspace data, suggest 3 relevant workflow automation templates:
+
+Connected Integrations: ${integrationSummary || 'None'}
+Recent Copilot Queries: ${queryPatterns || 'None'}
+Existing Workflows: ${existingWorkflows || 'None'}
+
+For each suggestion, provide:
+1. A clear name
+2. Description
+3. Trigger type (integration_event, copilot_query, schedule, or manual)
+4. List of 3-5 workflow steps
+5. Confidence score (0-100) based on relevance
+
+Consider common automation patterns like:
+- Notification workflows when events happen
+- Scheduled reports or summaries
+- Integration synchronization
+- Response automation based on Copilot queries
+
+Return only useful, practical suggestions that match their setup.`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            suggestions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  trigger_type: { type: 'string' },
+                  steps: { type: 'array', items: { type: 'string' } },
+                  confidence: { type: 'number' }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      setSuggestions(response.suggestions || []);
+    } catch (e) {
+      console.error('Failed to generate suggestions:', e);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const generateNextSteps = async (workflow) => {
+    if (!workflow) return;
+
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `A workflow has these steps:
+${workflow.steps?.map((s, i) => `${i + 1}. ${s.config?.action || 'Unknown'}`).join('\n') || 'No steps yet'}
+
+Trigger: ${workflow.trigger_type}
+
+Suggest 2-3 logical next steps that would make this workflow more useful. Consider:
+- What happens after the current steps?
+- Error handling or notifications
+- Data validation or transformation
+- Integration with other services
+
+Each suggestion needs a label (step name) and reason (why it's useful).`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            suggestions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  label: { type: 'string' },
+                  reason: { type: 'string' },
+                  action: { type: 'string' }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      setNextStepSuggestions(response.suggestions || []);
+    } catch (e) {
+      console.error('Failed to generate next steps:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (currentOrg && integrations.length > 0 && workflows.length >= 0) {
+      generateSuggestions();
+    }
+  }, [currentOrg, integrations.length, workflows.length]);
+
+  useEffect(() => {
+    if (selectedWorkflow && isEditing) {
+      generateNextSteps(selectedWorkflow);
+    } else {
+      setNextStepSuggestions([]);
+    }
+  }, [selectedWorkflow?.id, isEditing]);
+
+  const applyTemplate = (suggestion) => {
+    const newSteps = suggestion.steps.map((stepLabel, idx) => ({
+      id: `step_${Date.now()}_${idx}`,
+      type: 'action',
+      config: { 
+        action: inferActionType(stepLabel),
+        label: stepLabel 
+      },
+    }));
+
+    createWorkflowMutation.mutate();
+    setTimeout(() => {
+      const workflow = workflows[0];
+      if (workflow) {
+        updateWorkflowMutation.mutate({
+          workflowId: workflow.id,
+          updates: {
+            name: suggestion.name,
+            trigger_type: suggestion.trigger_type,
+            steps: newSteps,
+          }
+        });
+      }
+    }, 500);
+  };
+
+  const addSuggestedStep = (suggestion) => {
+    const newStep = {
+      id: `step_${Date.now()}`,
+      type: 'action',
+      config: { 
+        action: suggestion.action || 'send_notification',
+        label: suggestion.label 
+      },
+    };
+    
+    setSelectedWorkflow({
+      ...selectedWorkflow,
+      steps: [...(selectedWorkflow.steps || []), newStep],
+    });
+  };
+
+  const inferActionType = (label) => {
+    const lower = label.toLowerCase();
+    if (lower.includes('email')) return 'send_email';
+    if (lower.includes('notif')) return 'send_notification';
+    if (lower.includes('webhook') || lower.includes('api')) return 'webhook';
+    if (lower.includes('condition') || lower.includes('if')) return 'condition';
+    if (lower.includes('transform') || lower.includes('data')) return 'transform';
+    if (lower.includes('delay') || lower.includes('wait')) return 'delay';
+    return 'send_notification';
+  };
+
   return (
     <PermissionGuard permission={['manage_integrations', 'admin']} requireAny fallback={
       <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
@@ -123,6 +307,16 @@ export default function WorkflowBuilder() {
                 </Button>
               </div>
             </div>
+
+            <div className="p-4">
+              <WorkflowSuggestions
+                suggestions={suggestions}
+                isLoading={loadingSuggestions}
+                onApply={applyTemplate}
+                onRefresh={generateSuggestions}
+              />
+            </div>
+
             <WorkflowList
               workflows={workflows}
               selectedId={selectedWorkflow?.id}
@@ -167,11 +361,22 @@ export default function WorkflowBuilder() {
                   </div>
                 </div>
                 <div className="flex-1 flex">
-                  <WorkflowCanvas
-                    workflow={selectedWorkflow}
-                    isEditing={isEditing}
-                    onUpdate={(updates) => setSelectedWorkflow({ ...selectedWorkflow, ...updates })}
-                  />
+                  <div className="flex-1 overflow-auto">
+                    {isEditing && nextStepSuggestions.length > 0 && (
+                      <div className="p-6 pb-0">
+                        <NextStepSuggestions
+                          workflow={selectedWorkflow}
+                          suggestions={nextStepSuggestions}
+                          onAdd={addSuggestedStep}
+                        />
+                      </div>
+                    )}
+                    <WorkflowCanvas
+                      workflow={selectedWorkflow}
+                      isEditing={isEditing}
+                      onUpdate={(updates) => setSelectedWorkflow({ ...selectedWorkflow, ...updates })}
+                    />
+                  </div>
                   {isEditing && (
                     <WorkflowSidebar workflow={selectedWorkflow} />
                   )}
