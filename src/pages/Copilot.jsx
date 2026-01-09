@@ -19,6 +19,8 @@ export default function Copilot() {
   const [historyFilter, setHistoryFilter] = useState('all');
   const [historySearch, setHistorySearch] = useState('');
   const [currentOrg, setCurrentOrg] = useState(null);
+  const [currentSession, setCurrentSession] = useState(null);
+  const [preferences, setPreferences] = useState(null);
   
   const queryClient = useQueryClient();
 
@@ -30,7 +32,29 @@ export default function Copilot() {
         const memberships = await base44.entities.Membership.filter({ user_email: user.email, status: 'active' });
         if (memberships.length > 0) {
           const orgs = await base44.entities.Organization.filter({ id: memberships[0].org_id });
-          if (orgs.length > 0) setCurrentOrg(orgs[0]);
+          if (orgs.length > 0) {
+            setCurrentOrg(orgs[0]);
+            
+            // Load user preferences
+            const prefs = await base44.entities.UserPreferences.filter({ 
+              user_email: user.email, 
+              org_id: orgs[0].id 
+            });
+            if (prefs.length > 0) {
+              setPreferences(prefs[0]);
+            }
+            
+            // Load or create active session
+            const sessions = await base44.entities.ConversationSession.filter({
+              user_email: user.email,
+              org_id: orgs[0].id,
+              is_active: true
+            }, '-last_activity', 1);
+            
+            if (sessions.length > 0) {
+              setCurrentSession(sessions[0]);
+            }
+          }
         }
       } catch (e) {
         // User might not have org yet
@@ -60,10 +84,40 @@ export default function Copilot() {
     enabled: !!currentOrg,
   });
 
+  // Submit feedback mutation
+  const submitFeedbackMutation = useMutation({
+    mutationFn: async ({ query, feedback }) => {
+      const user = await base44.auth.me();
+      await base44.entities.QueryFeedback.create({
+        query_id: query.id,
+        org_id: currentOrg.id,
+        user_email: user.email,
+        ...feedback,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queries'] });
+    },
+  });
+
   // Create query mutation
   const createQueryMutation = useMutation({
     mutationFn: async (prompt) => {
       const startTime = Date.now();
+      const user = await base44.auth.me();
+      
+      // Build conversation context from current session
+      let conversationContext = '';
+      if (currentSession?.query_ids?.length > 0) {
+        const recentQueries = queries.filter(q => 
+          currentSession.query_ids.includes(q.id)
+        ).slice(-3);
+        
+        if (recentQueries.length > 0) {
+          conversationContext = '\n\nPrevious conversation:\n' + 
+            recentQueries.map(q => `User: ${q.prompt}\nAssistant: ${q.response?.slice(0, 200)}...`).join('\n\n');
+        }
+      }
       
       // Create query record
       const query = await base44.entities.Query.create({
@@ -109,9 +163,22 @@ export default function Copilot() {
         knowledgeContext = `\n\n${contextParts.join('\n')}\n\nUse this organization-specific knowledge to provide accurate, context-aware answers.`;
       }
 
+      // Apply user preferences to prompt
+      const lengthInstruction = preferences?.copilot_response_length === 'concise' 
+        ? ' Keep responses brief and to the point.' 
+        : preferences?.copilot_response_length === 'detailed' 
+        ? ' Provide detailed, comprehensive explanations.' 
+        : ' Balance brevity with completeness.';
+      
+      const verbosityInstruction = preferences?.copilot_verbosity === 'minimal'
+        ? ' Use minimal technical jargon.'
+        : preferences?.copilot_verbosity === 'verbose'
+        ? ' Include technical details and explanations.'
+        : ' Use clear, professional language.';
+      
       // Get AI response with all context
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a helpful AI copilot for a team. Provide clear, concise answers. Be direct and actionable.${integrationContext}${knowledgeContext}
+        prompt: `You are a helpful AI copilot for a team. Provide clear, concise answers. Be direct and actionable.${lengthInstruction}${verbosityInstruction}${integrationContext}${knowledgeContext}${conversationContext}
 
 User question: ${prompt}
 
@@ -140,8 +207,25 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
         }
       }
 
+      // Update or create session
+      if (currentSession) {
+        await base44.entities.ConversationSession.update(currentSession.id, {
+          query_ids: [...(currentSession.query_ids || []), query.id],
+          last_activity: new Date().toISOString(),
+        });
+      } else {
+        const newSession = await base44.entities.ConversationSession.create({
+          org_id: currentOrg.id,
+          user_email: user.email,
+          title: prompt.slice(0, 50),
+          query_ids: [query.id],
+          is_active: true,
+          last_activity: new Date().toISOString(),
+        });
+        setCurrentSession(newSession);
+      }
+
       // Log audit event
-      const user = await base44.auth.me();
       await base44.entities.AuditLog.create({
         org_id: currentOrg.id,
         actor_email: user.email,
@@ -301,6 +385,7 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                       <ResponseCard
                         query={selectedQuery}
                         onSave={(q) => toggleSaveMutation.mutate(q)}
+                        onFeedback={(q, feedback) => submitFeedbackMutation.mutate({ query: q, feedback })}
                       />
                     </motion.div>
                   ) : (
@@ -314,6 +399,7 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                         <ResponseCard
                           query={query}
                           onSave={(q) => toggleSaveMutation.mutate(q)}
+                          onFeedback={(q, feedback) => submitFeedbackMutation.mutate({ query: q, feedback })}
                           compact
                         />
                       </motion.div>

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import FeedbackWidget from './FeedbackWidget';
 
 const TYPE_LABELS = {
   answer: { label: 'Answer', color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -28,6 +29,7 @@ export default function ResponseCard({
   query, 
   onSave, 
   onShare,
+  onFeedback,
   compact = false 
 }) {
   const [copied, setCopied] = useState(false);
@@ -182,12 +184,19 @@ export default function ResponseCard({
 
       {/* Tags */}
       {query.tags?.length > 0 && (
-        <div className="px-4 pb-4 flex flex-wrap gap-1">
+        <div className="px-4 pb-2 flex flex-wrap gap-1">
           {query.tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs bg-slate-100 text-slate-600 hover:bg-slate-200">
               {tag}
             </Badge>
           ))}
+        </div>
+      )}
+
+      {/* Feedback */}
+      {query.status === 'completed' && onFeedback && (
+        <div className="px-4 pb-4 pt-2 border-t border-slate-100">
+          <FeedbackWidget query={query} onSubmit={(feedback) => onFeedback(query, feedback)} />
         </div>
       )}
     </div>

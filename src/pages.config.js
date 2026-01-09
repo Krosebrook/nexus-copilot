@@ -7,6 +7,7 @@ import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import SystemHealth from './pages/SystemHealth';
 import IntegrationHealth from './pages/IntegrationHealth';
+import IntegrationConfig from './pages/IntegrationConfig';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "Settings": Settings,
     "SystemHealth": SystemHealth,
     "IntegrationHealth": IntegrationHealth,
+    "IntegrationConfig": IntegrationConfig,
 }
 
 export const pagesConfig = {
