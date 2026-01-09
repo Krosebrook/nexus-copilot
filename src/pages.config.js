@@ -8,6 +8,8 @@ import Settings from './pages/Settings';
 import SystemHealth from './pages/SystemHealth';
 import IntegrationHealth from './pages/IntegrationHealth';
 import IntegrationConfig from './pages/IntegrationConfig';
+import IntegrationSetup from './pages/IntegrationSetup';
+import WorkflowBuilder from './pages/WorkflowBuilder';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +24,8 @@ export const PAGES = {
     "SystemHealth": SystemHealth,
     "IntegrationHealth": IntegrationHealth,
     "IntegrationConfig": IntegrationConfig,
+    "IntegrationSetup": IntegrationSetup,
+    "WorkflowBuilder": WorkflowBuilder,
 }
 
 export const pagesConfig = {
