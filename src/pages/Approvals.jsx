@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 import ApprovalCard from '@/components/admin/ApprovalCard';
+import PermissionGuard from '@/components/rbac/PermissionGuard';
 
 export default function Approvals() {
   const [currentOrg, setCurrentOrg] = useState(null);

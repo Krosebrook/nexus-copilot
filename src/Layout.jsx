@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { 
   Sparkles, LayoutDashboard, Settings, Activity, 
   CheckCircle, Book, Search, LogOut, ChevronDown,
-  Menu, X
+  Menu, X, Workflow
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -24,8 +24,9 @@ const NAV_ITEMS = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
   { name: 'Copilot', href: 'Copilot', icon: Sparkles },
   { name: 'Knowledge', href: 'Knowledge', icon: Book },
+  { name: 'Workflows', href: 'WorkflowBuilder', icon: Activity },
   { name: 'Approvals', href: 'Approvals', icon: CheckCircle },
-  { name: 'System Health', href: 'SystemHealth', icon: Activity },
+  { name: 'Docs', href: 'Docs', icon: Book },
   { name: 'Settings', href: 'Settings', icon: Settings },
 ];
 

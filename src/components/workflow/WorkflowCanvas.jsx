@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import WorkflowStepCard from './WorkflowStepCard';
 
 export default function WorkflowCanvas({ workflow, isEditing, onUpdate }) {
-  const addStep = () => {
+  const addStep = (stepType = 'send_notification') => {
     const newStep = {
       id: `step_${Date.now()}`,
       type: 'action',
-      config: { action: 'send_notification' },
+      config: { action: stepType },
     };
     
     onUpdate({

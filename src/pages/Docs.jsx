@@ -1,375 +1,381 @@
 import React, { useState } from 'react';
-import { 
-  Book, Layout, Database, Shield, Wrench, 
-  HelpCircle, ChevronRight, Search
-} from 'lucide-react';
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { Book, Sparkles, Workflow, Shield, Zap, Settings as SettingsIcon, FileText, ChevronRight } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from 'react-markdown';
 
-const DOCS_SECTIONS = [
-  {
-    id: 'overview',
-    title: 'Overview',
-    icon: Book,
-    content: `
-# Platform Overview
+const DOCUMENTATION = {
+  overview: `# AI Copilot Platform Documentation
 
-Welcome to the AI Copilot platform documentation. This enterprise-ready platform helps teams think faster and stay aligned through AI-powered insights and collaboration.
+Welcome to the AI Copilot Platform - an intelligent workspace automation and knowledge management system.
 
 ## Key Features
 
-- **AI-Powered Queries**: Ask questions in natural language and get instant, actionable responses
-- **Multi-Tenant Architecture**: Secure workspace isolation with role-based access control
-- **Audit Logging**: Complete audit trail for compliance and security
-- **Integrations**: Connect with your existing tools and workflows
-- **Approval Workflows**: Governance controls for sensitive operations
+### 🤖 AI Copilot
+Conversational AI assistant with memory, context awareness, and customizable preferences.
 
-## Getting Started
+### 🔄 Workflow Automation
+Visual workflow builder with AI-powered suggestions, conditional logic, and integration actions.
 
-1. **Create your workspace**: Set up your organization and invite team members
-2. **Configure roles**: Assign appropriate permissions to team members
-3. **Start asking**: Use the Copilot interface to get instant answers
-4. **Review insights**: Track patterns and save important responses
+### 🔐 Role-Based Access Control
+Granular permissions system with roles: Owner, Admin, Editor, and Viewer.
 
-## Quick Links
+### 🔌 Integration Management
+Connect external services with guided setup wizards and health monitoring.
 
-- [Architecture](#architecture)
-- [Data Model](#data-model)
-- [Security](#security)
-- [Operations](#operations)
-`
-  },
-  {
-    id: 'architecture',
-    title: 'Architecture',
-    icon: Layout,
-    content: `
-# Architecture
+### 📊 Analytics & Monitoring
+Real-time system health, audit logs, and integration status tracking.`,
 
-## System Components
+  copilot: `# Copilot Documentation
 
-### Frontend Layer
-- React-based single-page application
-- Real-time updates via query invalidation
-- Responsive design for all devices
+## Features
 
-### Application Layer
-- Multi-tenant workspace isolation
-- Role-based access control (RBAC)
-- Background job processing
-- Approval workflow engine
+### Conversational Memory
+Copilot remembers previous interactions within a session, providing contextual responses.
 
-### Data Layer
-- Entity-based data model
-- Automatic audit logging
-- Soft delete and retention policies
+### User Preferences
+Customize your Copilot experience:
+- **Response Length**: Concise, Balanced, or Detailed
+- **Verbosity**: Minimal, Normal, or Verbose
+- **Show Sources**: Toggle integration/knowledge base citations
 
-## Data Flow
+### Feedback System
+Rate responses from 1-5 stars with detailed feedback:
+- Helpful / Not helpful quick buttons
+- Detailed feedback with categories (accurate, incomplete, too verbose, etc.)
+- Comments for improvement
 
+### Knowledge Integration
+Copilot accesses:
+- Connected integrations (Slack, Notion, GitHub, etc.)
+- Organization knowledge base
+- Conversation history
+
+## Usage
+
+1. Navigate to **Copilot** page
+2. Type your question in the input field
+3. View AI-generated responses with sources
+4. Rate responses to improve quality
+5. Save important queries for later
+
+## Tips
+
+- Use specific questions for better results
+- Reference previous conversation context
+- Save frequently used queries
+- Provide feedback to improve responses`,
+
+  workflows: `# Workflow Automation Documentation
+
+## Overview
+
+Create automated workflows that respond to events, schedules, or manual triggers.
+
+## Workflow Components
+
+### Triggers
+- **Manual**: Run on demand
+- **Schedule**: Time-based (interval, cron, daily, weekly)
+- **Integration Event**: When something happens in connected services
+- **Copilot Query**: After AI response generation
+
+### Step Types
+
+#### Action Steps
+- **Send Notification**: Post to team channels
+- **Send Email**: Email team members or external contacts
+- **Webhook**: Call external APIs
+- **Integration Action**: Service-specific actions
+
+#### Logic Steps
+- **Condition**: If/else branching based on data
+- **Transform**: Manipulate and transform data
+
+#### Utility Steps
+- **Delay**: Wait before executing next step
+
+## AI Suggestions
+
+The workflow builder analyzes:
+- Connected integrations
+- Recent Copilot queries
+- Existing workflows
+- Common patterns
+
+Based on this analysis, it suggests:
+- Relevant workflow templates
+- Next steps for current workflow
+- Optimization opportunities
+
+## Creating a Workflow
+
+1. Navigate to **Workflow Builder**
+2. Click **New Workflow**
+3. Configure trigger type
+4. Add steps using the canvas
+5. Configure each step's parameters
+6. Save and activate
+
+## Example Workflows
+
+### Daily Summary Report
+- **Trigger**: Schedule (daily at 9 AM)
+- **Steps**: 
+  1. Query Copilot for daily summary
+  2. Send email to team
+  3. Post to Slack channel
+
+### Integration Event Response
+- **Trigger**: Integration Event (GitHub new issue)
+- **Steps**:
+  1. Transform issue data
+  2. Create Copilot query for analysis
+  3. Post response to issue comments`,
+
+  integrations: `# Integration Management Documentation
+
+## Supported Integrations
+
+- **Slack**: Team communication
+- **Notion**: Knowledge base
+- **GitHub**: Code repository
+- **Jira**: Project tracking
+- **Linear**: Issue tracking
+- **Confluence**: Documentation
+
+## Setup Process
+
+### Guided Wizard (4 Steps)
+
+1. **Select Service**: Choose integration type
+2. **Connect Account**: Authenticate via OAuth
+3. **Configure Features**: Select capabilities to enable
+4. **Review**: Confirm settings
+
+### Configuration Options
+
+- **Webhook URL**: Receive real-time events
+- **Sync Interval**: Custom sync frequency (15 min - daily)
+- **Event Triggers**: Specific events to monitor
+- **Capabilities**: Granular permission selection
+
+## Health Monitoring
+
+The system tracks:
+- Error rates
+- Sync failures
+- Connection staleness
+- Health score (0-100)
+
+### Alerts
+- **Critical**: Immediate notification for connection failures
+- **Warning**: Proactive alerts for degrading performance
+
+## Bulk Operations
+
+- Re-authenticate multiple integrations
+- Bulk sync across services
+- Mass configuration updates`,
+
+  rbac: `# Role-Based Access Control Documentation
+
+## Roles & Permissions
+
+### Owner
+- Full system access
+- All permissions (wildcard)
+- Manage organization settings
+- Delete organization
+
+### Admin
+- Manage members
+- Manage integrations
+- Approve requests
+- View audit logs
+- Manage knowledge base
+- Use Copilot
+- View analytics
+- Manage settings
+
+### Editor
+- Manage knowledge base
+- Use Copilot
+- View analytics
+
+### Viewer
+- Use Copilot
+- View analytics (read-only)
+
+## Permission System
+
+### Using PermissionGuard Component
+
+\`\`\`jsx
+import PermissionGuard from '@/components/rbac/PermissionGuard';
+
+<PermissionGuard permission="manage_integrations" fallback={<NoAccess />}>
+  <IntegrationSettings />
+</PermissionGuard>
 \`\`\`
-User → Frontend → API → Business Logic → Data Layer
-                    ↓
-              AI Engine (LLM)
-                    ↓
-              Response + Audit Log
+
+### Multiple Permissions
+
+\`\`\`jsx
+<PermissionGuard 
+  permission={['manage_integrations', 'admin']} 
+  requireAny={true}
+>
+  <Content />
+</PermissionGuard>
 \`\`\`
 
-## Multi-Tenancy
+### Using Hooks
 
-All data is scoped by \`org_id\` (organization ID). This ensures complete isolation between workspaces:
+\`\`\`jsx
+import { usePermissions } from '@/components/rbac/PermissionGuard';
 
-- Queries are always filtered by org_id
-- Members can only access their organization's data
-- Audit logs are organization-scoped
-- Integrations are configured per-organization
+function MyComponent() {
+  const { role, loading, can } = usePermissions();
+  
+  if (can('manage_members')) {
+    return <MemberManagement />;
+  }
+}
+\`\`\`
 
-## Integration Points
+## Best Practices
 
-1. **LLM Integration**: AI responses via Core.InvokeLLM
-2. **Email Notifications**: Invites and alerts via Core.SendEmail
-3. **File Storage**: Document uploads via Core.UploadFile
-`
-  },
-  {
-    id: 'data-model',
-    title: 'Data Model',
-    icon: Database,
-    content: `
-# Data Model
+- Always wrap sensitive features with PermissionGuard
+- Use appropriate fallback UI for unauthorized access
+- Audit role changes in AuditLog
+- Review permissions regularly`,
+
+  api: `# API & Data Models
 
 ## Core Entities
 
-### Organization
-The root tenant entity. All other data is scoped to an organization.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| name | string | Organization display name |
-| slug | string | URL-friendly identifier |
-| plan | enum | free, pro, team, enterprise |
-| owner_email | string | Primary owner |
-
-### Membership
-Links users to organizations with roles.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| org_id | string | Organization reference |
-| user_email | string | Member's email |
-| role | enum | owner, admin, editor, viewer |
-| status | enum | active, invited, suspended |
-
 ### Query
-Stores all AI queries and responses.
+User queries and Copilot responses with context tracking.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| org_id | string | Tenant boundary |
-| prompt | string | User's question |
-| response | string | AI-generated answer |
-| response_type | enum | answer, summary, action, analysis |
-| status | enum | pending, processing, completed, failed |
+**Fields:**
+- prompt, response, response_type
+- status, tokens_used, latency_ms
+- integration_refs, context_refs
+- is_saved, is_shared, tags
 
-### AuditLog
-Immutable record of all system events.
+### Workflow
+Automated workflow definitions.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| org_id | string | Tenant boundary |
-| actor_email | string | Who performed the action |
-| action | string | Action identifier |
-| action_category | enum | auth, query, admin, data, integration, system |
-| resource_type | string | Affected entity type |
-| resource_id | string | Affected entity ID |
+**Fields:**
+- name, description, trigger_type
+- trigger_config, steps, is_active
+- execution_count, last_executed
 
-## Indexing Strategy
+### Integration
+External service connections.
 
-- Primary indexes on \`id\` for all entities
-- Composite indexes on \`org_id + created_date\` for efficient queries
-- Text indexes on \`Query.prompt\` for search functionality
-`
-  },
-  {
-    id: 'security',
-    title: 'Security',
-    icon: Shield,
-    content: `
-# Security
+**Fields:**
+- type, name, status, capabilities
+- config, last_sync_at, sync_count
+- error_message
 
-## Authorization Model
+### UserPreferences
+Per-user Copilot settings.
 
-### Role-Based Access Control (RBAC)
+**Fields:**
+- copilot_response_length
+- copilot_verbosity
+- copilot_show_sources
+- notification_preferences
 
-| Role | Permissions |
-|------|-------------|
-| **Owner** | Full access, billing, delete org |
-| **Admin** | Manage members, settings, integrations |
-| **Editor** | Create/edit queries, use copilot |
-| **Viewer** | Read-only access to queries |
+### ConversationSession
+Copilot conversation grouping.
 
-### Permission Matrix
+**Fields:**
+- title, query_ids, context_summary
+- is_active, last_activity
 
-| Action | Owner | Admin | Editor | Viewer |
-|--------|-------|-------|--------|--------|
-| Create Query | ✅ | ✅ | ✅ | ❌ |
-| View Queries | ✅ | ✅ | ✅ | ✅ |
-| Invite Members | ✅ | ✅ | ❌ | ❌ |
-| Change Roles | ✅ | ✅ | ❌ | ❌ |
-| Manage Integrations | ✅ | ✅ | ❌ | ❌ |
-| View Audit Logs | ✅ | ✅ | ❌ | ❌ |
-| Approve Requests | ✅ | ✅ | ❌ | ❌ |
+### QueryFeedback
+User feedback on AI responses.
 
-## Tenant Isolation
+**Fields:**
+- query_id, rating (1-5)
+- feedback_type, comment, sentiment
 
-All data access is enforced at the query level:
-- Every query includes \`org_id\` filter
-- No cross-tenant data leakage possible
-- Membership validated on every request
+## Base44 SDK Usage
 
-## Secrets Handling
+### Queries
+\`\`\`javascript
+// Create query
+await base44.entities.Query.create({
+  org_id: orgId,
+  prompt: "Question",
+  status: "processing"
+});
 
-- Secrets are never logged
-- Integration credentials stored encrypted
-- API keys rotated regularly
-- No secrets in frontend code
+// Filter queries
+await base44.entities.Query.filter(
+  { org_id: orgId, status: "completed" },
+  '-created_date',
+  20
+);
+\`\`\`
 
-## Audit Trail
+### Integrations
+\`\`\`javascript
+// Invoke LLM
+await base44.integrations.Core.InvokeLLM({
+  prompt: "Your prompt",
+  add_context_from_internet: true,
+  response_json_schema: { /* schema */ }
+});
 
-All sensitive actions are logged:
-- Authentication events
-- Role changes
-- Data exports
-- Integration connections
-- Approval decisions
-`
-  },
-  {
-    id: 'operations',
-    title: 'Operations',
-    icon: Wrench,
-    content: `
-# Operations
-
-## Runbooks
-
-### High Error Rate
-
-1. Check System Health page for service status
-2. Review Recent Errors for patterns
-3. Check job queue for stuck jobs
-4. Verify integration connections
-
-### Failed Jobs
-
-1. Navigate to System Health → Job Queue
-2. Identify failed jobs and error messages
-3. For transient errors: jobs auto-retry up to 3 times
-4. For persistent failures: check dead letter queue
-
-### User Access Issues
-
-1. Verify user membership status in Settings → Members
-2. Check role assignments
-3. Review audit log for recent changes
-4. Resend invite if status is "invited"
-
-## Monitoring
-
-### Key Metrics
-
-- **Query Latency**: Target < 500ms p95
-- **Error Rate**: Target < 0.1%
-- **Job Success Rate**: Target > 99%
-- **API Uptime**: Target 99.9%
-
-### Health Checks
-
-The System Health page provides:
-- Service status indicators
-- Latency metrics
-- Uptime percentages
-- Job queue status
-- Recent error logs
-
-## Backup & Recovery
-
-- All data automatically replicated
-- Point-in-time recovery available
-- Export functionality for data portability
-- Retention policies configurable per plan
-
-## Incident Response
-
-1. **Detect**: Monitor alerts and health checks
-2. **Triage**: Assess severity and impact
-3. **Mitigate**: Apply immediate fixes
-4. **Communicate**: Update stakeholders
-5. **Resolve**: Implement permanent fix
-6. **Review**: Post-incident analysis
-`
-  },
-  {
-    id: 'faq',
-    title: 'FAQ',
-    icon: HelpCircle,
-    content: `
-# Frequently Asked Questions
-
-## General
-
-### What is the AI Copilot?
-The AI Copilot is an intelligent assistant that helps teams get quick answers, summaries, and insights. It uses advanced language models to understand context and provide relevant responses.
-
-### How do I invite team members?
-Go to Settings → Members → Invite Member. Enter their email and select a role. They'll receive an invitation email.
-
-### What plans are available?
-- **Free**: 100 queries/month, 1 user
-- **Pro**: 1,000 queries/month, 5 users
-- **Team**: 10,000 queries/month, 25 users, SSO
-- **Enterprise**: Unlimited, custom SLA
-
-## Security
-
-### Is my data secure?
-Yes. All data is encrypted at rest and in transit. We use industry-standard security practices and undergo regular security audits.
-
-### Who can see my queries?
-Only members of your organization can see queries. Data is completely isolated between organizations.
-
-### Can I export my data?
-Yes. Admins can request data exports from the Settings page. Exports include all queries, audit logs, and member data.
-
-## Technical
-
-### What's the response time?
-Most queries complete in under 500ms. Complex queries with internet context may take 1-2 seconds.
-
-### Are there rate limits?
-Yes, based on your plan:
-- Free: 10 queries/minute
-- Pro: 50 queries/minute
-- Team: 200 queries/minute
-- Enterprise: Custom
-
-### Can I integrate with other tools?
-Yes. We support integrations with Slack, Notion, Confluence, GitHub, Jira, Linear, and custom webhooks.
-`
-  }
-];
+// Upload file
+await base44.integrations.Core.UploadFile({
+  file: fileObject
+});
+\`\`\``
+};
 
 export default function Docs() {
   const [activeSection, setActiveSection] = useState('overview');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const currentSection = DOCS_SECTIONS.find(s => s.id === activeSection) || DOCS_SECTIONS[0];
-
-  const filteredSections = searchQuery
-    ? DOCS_SECTIONS.filter(s => 
-        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.content.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : DOCS_SECTIONS;
+  const sections = [
+    { id: 'overview', label: 'Overview', icon: Book },
+    { id: 'copilot', label: 'Copilot', icon: Sparkles },
+    { id: 'workflows', label: 'Workflows', icon: Workflow },
+    { id: 'integrations', label: 'Integrations', icon: Zap },
+    { id: 'rbac', label: 'Access Control', icon: Shield },
+    { id: 'api', label: 'API Reference', icon: FileText },
+  ];
 
   return (
-    <div className="h-screen flex bg-white">
-      {/* Sidebar */}
-      <div className="w-72 border-r border-slate-200 flex flex-col">
-        <div className="p-4 border-b border-slate-100">
-          <div className="flex items-center gap-2 mb-4">
-            <Book className="h-5 w-5 text-slate-600" />
-            <h1 className="font-semibold text-slate-900">Documentation</h1>
+    <div className="min-h-screen bg-slate-50">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-white border-r border-slate-200 min-h-screen p-6">
+          <div className="flex items-center gap-2 mb-8">
+            <Book className="h-6 w-6 text-slate-900" />
+            <h1 className="text-xl font-semibold text-slate-900">Documentation</h1>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search docs..."
-              className="pl-9 h-9 bg-slate-50"
-            />
-          </div>
-        </div>
-
-        <ScrollArea className="flex-1 p-2">
+          
           <nav className="space-y-1">
-            {filteredSections.map((section) => {
-              const SectionIcon = section.icon;
+            {sections.map((section) => {
+              const Icon = section.icon;
               return (
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors",
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeSection === section.id
-                      ? "bg-slate-100 text-slate-900"
-                      : "text-slate-600 hover:bg-slate-50"
-                  )}
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 >
-                  <SectionIcon className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm font-medium">{section.title}</span>
+                  <Icon className="h-4 w-4" />
+                  {section.label}
                   {activeSection === section.id && (
                     <ChevronRight className="h-4 w-4 ml-auto" />
                   )}
@@ -377,91 +383,68 @@ export default function Docs() {
               );
             })}
           </nav>
-        </ScrollArea>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-3xl mx-auto px-8 py-12">
-          <article className="prose prose-slate max-w-none">
-            <ReactMarkdown
-              components={{
-                h1: ({ children }) => (
-                  <h1 className="text-3xl font-bold text-slate-900 mb-6 pb-4 border-b border-slate-200">
-                    {children}
-                  </h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="text-xl font-semibold text-slate-900 mt-8 mb-4">
-                    {children}
-                  </h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="text-lg font-semibold text-slate-800 mt-6 mb-3">
-                    {children}
-                  </h3>
-                ),
-                p: ({ children }) => (
-                  <p className="text-slate-600 leading-relaxed mb-4">
-                    {children}
-                  </p>
-                ),
-                ul: ({ children }) => (
-                  <ul className="list-disc pl-6 mb-4 space-y-2 text-slate-600">
-                    {children}
-                  </ul>
-                ),
-                ol: ({ children }) => (
-                  <ol className="list-decimal pl-6 mb-4 space-y-2 text-slate-600">
-                    {children}
-                  </ol>
-                ),
-                li: ({ children }) => (
-                  <li className="text-slate-600">{children}</li>
-                ),
-                code: ({ inline, children }) => 
-                  inline ? (
-                    <code className="px-1.5 py-0.5 bg-slate-100 text-slate-800 rounded text-sm font-mono">
-                      {children}
-                    </code>
-                  ) : (
-                    <pre className="bg-slate-900 text-slate-100 rounded-lg p-4 overflow-x-auto text-sm font-mono my-4">
-                      <code>{children}</code>
-                    </pre>
-                  ),
-                table: ({ children }) => (
-                  <div className="overflow-x-auto my-4">
-                    <table className="w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
-                      {children}
-                    </table>
-                  </div>
-                ),
-                th: ({ children }) => (
-                  <th className="bg-slate-50 px-4 py-2 text-left text-sm font-semibold text-slate-700 border-b border-slate-200">
-                    {children}
-                  </th>
-                ),
-                td: ({ children }) => (
-                  <td className="px-4 py-2 text-sm text-slate-600 border-b border-slate-100">
-                    {children}
-                  </td>
-                ),
-                strong: ({ children }) => (
-                  <strong className="font-semibold text-slate-900">{children}</strong>
-                ),
-                a: ({ children, href }) => (
-                  <a 
-                    href={href} 
-                    className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
-                  >
-                    {children}
-                  </a>
-                ),
-              }}
-            >
-              {currentSection.content}
-            </ReactMarkdown>
-          </article>
+          <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs font-medium text-blue-900 mb-1">Need Help?</p>
+            <p className="text-xs text-blue-700">
+              Use Copilot to ask questions about these features.
+            </p>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-8 overflow-auto">
+          <div className="max-w-4xl mx-auto">
+            <Card>
+              <CardContent className="p-8">
+                <ReactMarkdown
+                  className="prose prose-slate max-w-none"
+                  components={{
+                    h1: ({ children }) => (
+                      <h1 className="text-3xl font-bold text-slate-900 mb-4 pb-4 border-b border-slate-200">
+                        {children}
+                      </h1>
+                    ),
+                    h2: ({ children }) => (
+                      <h2 className="text-2xl font-semibold text-slate-900 mt-8 mb-4">
+                        {children}
+                      </h2>
+                    ),
+                    h3: ({ children }) => (
+                      <h3 className="text-xl font-semibold text-slate-900 mt-6 mb-3">
+                        {children}
+                      </h3>
+                    ),
+                    p: ({ children }) => (
+                      <p className="text-slate-600 leading-relaxed mb-4">
+                        {children}
+                      </p>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="list-disc list-inside space-y-2 mb-4 text-slate-600">
+                        {children}
+                      </ul>
+                    ),
+                    code: ({ inline, children }) =>
+                      inline ? (
+                        <code className="px-1.5 py-0.5 bg-slate-100 rounded text-sm font-mono text-slate-800">
+                          {children}
+                        </code>
+                      ) : (
+                        <pre className="bg-slate-900 text-slate-100 rounded-lg p-4 overflow-x-auto mb-4">
+                          <code className="text-sm">{children}</code>
+                        </pre>
+                      ),
+                    strong: ({ children }) => (
+                      <strong className="font-semibold text-slate-900">{children}</strong>
+                    ),
+                  }}
+                >
+                  {DOCUMENTATION[activeSection]}
+                </ReactMarkdown>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
