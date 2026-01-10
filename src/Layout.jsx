@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,7 +79,8 @@ export default function Layout({ children, currentPageName }) {
                    user?.email?.slice(0, 2).toUpperCase() || 'U';
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-slate-50">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
         <div className="flex items-center justify-between px-4 lg:px-6 h-14">

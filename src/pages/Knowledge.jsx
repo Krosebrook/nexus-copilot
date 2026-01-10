@@ -84,51 +84,65 @@ export default function Knowledge() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      await base44.entities.KnowledgeBase.update(id, data);
+      try {
+        await base44.entities.KnowledgeBase.update(id, data);
 
-      // Update backlinks if linked_articles changed
-      if (data.linked_articles) {
-        const oldLinks = editingArticle?.linked_articles || [];
-        const newLinks = data.linked_articles;
-        
-        // Add backlinks to newly linked articles
-        const added = newLinks.filter(l => !oldLinks.includes(l));
-        for (const linkId of added) {
-          const targetArticle = knowledgeBase.find(a => a.id === linkId);
-          if (targetArticle) {
-            const updatedBacklinks = [...(targetArticle.backlinks || []), id];
-            await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
+        // Update backlinks if linked_articles changed
+        if (data.linked_articles) {
+          const oldLinks = editingArticle?.linked_articles || [];
+          const newLinks = data.linked_articles;
+          
+          // Add backlinks to newly linked articles
+          const added = newLinks.filter(l => !oldLinks.includes(l));
+          for (const linkId of added) {
+            const targetArticle = knowledgeBase.find(a => a.id === linkId);
+            if (targetArticle) {
+              const updatedBacklinks = [...new Set([...(targetArticle.backlinks || []), id])];
+              await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
+            }
+          }
+
+          // Remove backlinks from unlinked articles
+          const removed = oldLinks.filter(l => !newLinks.includes(l));
+          for (const linkId of removed) {
+            const targetArticle = knowledgeBase.find(a => a.id === linkId);
+            if (targetArticle) {
+              const updatedBacklinks = (targetArticle.backlinks || []).filter(b => b !== id);
+              await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
+            }
           }
         }
 
-        // Remove backlinks from unlinked articles
-        const removed = oldLinks.filter(l => !newLinks.includes(l));
-        for (const linkId of removed) {
-          const targetArticle = knowledgeBase.find(a => a.id === linkId);
-          if (targetArticle) {
-            const updatedBacklinks = (targetArticle.backlinks || []).filter(b => b !== id);
-            await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
-          }
-        }
+        await base44.entities.AuditLog.create({
+          org_id: currentOrg.id,
+          actor_email: user.email,
+          action: 'knowledge_updated',
+          action_category: 'data',
+          resource_type: 'KnowledgeBase',
+          resource_id: id,
+          status: 'success',
+        });
+      } catch (error) {
+        await base44.entities.AuditLog.create({
+          org_id: currentOrg.id,
+          actor_email: user.email,
+          action: 'knowledge_update_failed',
+          action_category: 'data',
+          resource_type: 'KnowledgeBase',
+          resource_id: id,
+          status: 'failure',
+          details: { error: error.message },
+        });
+        throw error;
       }
-
-      await base44.entities.AuditLog.create({
-        org_id: currentOrg.id,
-        actor_email: user.email,
-        action: 'knowledge_updated',
-        action_category: 'data',
-        resource_type: 'KnowledgeBase',
-        resource_id: id,
-        status: 'success',
-      });
     },
     onSuccess: () => {
-      toast.success('Article updated');
+      toast.success('Article updated successfully');
       queryClient.invalidateQueries({ queryKey: ['knowledge'] });
       setEditingArticle(null);
     },
-    onError: () => {
-      toast.error('Failed to update article');
+    onError: (error) => {
+      toast.error('Failed to update article: ' + (error.message || 'Unknown error'));
     },
   });
 
@@ -177,12 +191,12 @@ export default function Knowledge() {
         parent_article_id: data.parent_article_id || undefined,
       });
 
-      // Add backlinks to linked articles
+      // Add backlinks to linked articles (prevent duplicates)
       if (data.linked_articles?.length > 0) {
         for (const linkId of data.linked_articles) {
           const targetArticle = knowledgeBase.find(a => a.id === linkId);
           if (targetArticle) {
-            const updatedBacklinks = [...(targetArticle.backlinks || []), kb.id];
+            const updatedBacklinks = [...new Set([...(targetArticle.backlinks || []), kb.id])];
             await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
           }
         }
@@ -223,6 +237,28 @@ export default function Knowledge() {
 
   const deleteMutation = useMutation({
     mutationFn: async (kb) => {
+      // Remove backlinks from articles that link to this one
+      if (kb.backlinks?.length > 0) {
+        for (const backlinkId of kb.backlinks) {
+          const article = knowledgeBase.find(a => a.id === backlinkId);
+          if (article) {
+            const updatedLinks = (article.linked_articles || []).filter(l => l !== kb.id);
+            await base44.entities.KnowledgeBase.update(backlinkId, { linked_articles: updatedLinks });
+          }
+        }
+      }
+
+      // Remove this article from linked articles' backlinks
+      if (kb.linked_articles?.length > 0) {
+        for (const linkId of kb.linked_articles) {
+          const article = knowledgeBase.find(a => a.id === linkId);
+          if (article) {
+            const updatedBacklinks = (article.backlinks || []).filter(b => b !== kb.id);
+            await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
+          }
+        }
+      }
+
       await base44.entities.KnowledgeBase.delete(kb.id);
     },
     onSuccess: () => {

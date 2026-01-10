@@ -11,9 +11,13 @@ export default function KnowledgeGraph({ articles, onArticleClick }) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!canvasRef.current || articles.length === 0) return;
+
+    try {
+      setError(null);
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -169,7 +173,10 @@ export default function KnowledgeGraph({ articles, onArticleClick }) {
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mouseup', handleMouseUp);
-    };
+    } catch (err) {
+      console.error('Graph rendering error:', err);
+      setError('Failed to render knowledge graph');
+    }
   }, [articles, zoom, pan, isDragging, hoveredNode, onArticleClick]);
 
   return (
@@ -203,12 +210,18 @@ export default function KnowledgeGraph({ articles, onArticleClick }) {
         </div>
       </CardHeader>
       <CardContent>
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={500}
-          className="border border-slate-200 rounded-lg w-full"
-        />
+        {error ? (
+          <div className="text-center py-12 text-red-600">
+            <p>{error}</p>
+          </div>
+        ) : (
+          <canvas
+            ref={canvasRef}
+            width={800}
+            height={500}
+            className="border border-slate-200 rounded-lg w-full"
+          />
+        )}
         <div className="mt-4 flex flex-wrap gap-2">
           <Badge variant="outline">
             {articles.length} articles

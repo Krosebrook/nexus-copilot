@@ -39,6 +39,20 @@ export default function ArticleEditor({ article, allArticles = [], onSave, onCan
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.title?.trim()) {
+      return;
+    }
+    if (!formData.content?.trim()) {
+      return;
+    }
+    
+    // Prevent circular references in parent-child relationships
+    if (formData.parent_article_id === article?.id) {
+      return;
+    }
+    
     onSave(formData);
   };
 

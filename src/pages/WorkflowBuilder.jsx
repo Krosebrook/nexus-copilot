@@ -11,6 +11,7 @@ import WorkflowSidebar from '@/components/workflow/WorkflowSidebar';
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog';
 import WorkflowSuggestions from '@/components/workflow/WorkflowSuggestions';
 import NextStepSuggestions from '@/components/workflow/NextStepSuggestions';
+import WorkflowExecutionMonitor from '@/components/workflow/WorkflowExecutionMonitor';
 import PermissionGuard from '@/components/rbac/PermissionGuard';
 
 export default function WorkflowBuilder() {
@@ -377,9 +378,16 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
                       onUpdate={(updates) => setSelectedWorkflow({ ...selectedWorkflow, ...updates })}
                     />
                   </div>
-                  {isEditing && (
-                    <WorkflowSidebar workflow={selectedWorkflow} />
-                  )}
+                  <div className="w-80 border-l border-slate-200 bg-white p-4 overflow-auto">
+                    {isEditing ? (
+                      <WorkflowSidebar workflow={selectedWorkflow} />
+                    ) : (
+                      <WorkflowExecutionMonitor 
+                        workflowId={selectedWorkflow.id} 
+                        orgId={currentOrg?.id}
+                      />
+                    )}
+                  </div>
                 </div>
               </>
             ) : (
