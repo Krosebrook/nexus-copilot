@@ -173,6 +173,7 @@ export default function KnowledgeGraph({ articles, onArticleClick }) {
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mousedown', handleMouseDown);
       canvas.removeEventListener('mouseup', handleMouseUp);
+    };
     } catch (err) {
       console.error('Graph rendering error:', err);
       setError('Failed to render knowledge graph');
