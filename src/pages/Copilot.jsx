@@ -146,21 +146,43 @@ export default function Copilot() {
         integrationContext = `\n\n${contextParts.join('\n')}\n\nYou can reference these tools if relevant to the user's question.`;
       }
 
-      // Gather context from knowledge base
+      // Gather context from knowledge base with graph traversal
       let knowledgeContext = '';
       const usedKnowledge = [];
 
       if (knowledgeBase.length > 0) {
+        // Find most relevant articles (could be enhanced with semantic search)
+        const relevantArticles = knowledgeBase.slice(0, 3);
         const contextParts = ['Organization knowledge base:'];
-        
-        for (const kb of knowledgeBase.slice(0, 5)) {
+
+        for (const kb of relevantArticles) {
           contextParts.push(`\n## ${kb.title}`);
           if (kb.category) contextParts.push(`Category: ${kb.category}`);
           contextParts.push(`Content: ${kb.content.slice(0, 500)}...`);
           usedKnowledge.push(kb.id);
+
+          // Include linked articles for context
+          if (kb.linked_articles?.length > 0) {
+            const linkedTitles = kb.linked_articles
+              .map(id => knowledgeBase.find(a => a.id === id)?.title)
+              .filter(Boolean);
+            if (linkedTitles.length > 0) {
+              contextParts.push(`Related articles: ${linkedTitles.join(', ')}`);
+            }
+          }
+
+          // Include backlinks
+          if (kb.backlinks?.length > 0) {
+            const backlinkTitles = kb.backlinks
+              .map(id => knowledgeBase.find(a => a.id === id)?.title)
+              .filter(Boolean);
+            if (backlinkTitles.length > 0) {
+              contextParts.push(`Referenced by: ${backlinkTitles.join(', ')}`);
+            }
+          }
         }
 
-        knowledgeContext = `\n\n${contextParts.join('\n')}\n\nUse this organization-specific knowledge to provide accurate, context-aware answers.`;
+        knowledgeContext = `\n\n${contextParts.join('\n')}\n\nUse this organization-specific knowledge to provide accurate, context-aware answers. When citing information, mention the article title.`;
       }
 
       // Apply user preferences to prompt

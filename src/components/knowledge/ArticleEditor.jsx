@@ -12,14 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ArticleLinkSelector from './ArticleLinkSelector';
 
-export default function ArticleEditor({ article, onSave, onCancel }) {
+export default function ArticleEditor({ article, allArticles = [], onSave, onCancel }) {
   const [formData, setFormData] = useState({
     title: article?.title || '',
     content: article?.content || '',
     category: article?.category || '',
     tags: article?.tags || [],
     source_url: article?.source_url || '',
+    linked_articles: article?.linked_articles || [],
+    parent_article_id: article?.parent_article_id || '',
   });
   const [tagInput, setTagInput] = useState('');
 
@@ -124,6 +127,31 @@ export default function ArticleEditor({ article, onSave, onCancel }) {
               placeholder="https://..."
             />
           </div>
+
+          <div>
+            <Label>Parent Article (optional)</Label>
+            <Select
+              value={formData.parent_article_id}
+              onValueChange={(value) => setFormData({ ...formData, parent_article_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select parent article" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>None</SelectItem>
+                {allArticles.filter(a => a.id !== article?.id).map(a => (
+                  <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ArticleLinkSelector
+            allArticles={allArticles}
+            currentArticleId={article?.id}
+            selectedLinks={formData.linked_articles}
+            onLinksChange={(links) => setFormData({ ...formData, linked_articles: links })}
+          />
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={onCancel}>

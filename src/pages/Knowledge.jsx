@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Book, Plus, Link as LinkIcon, FileText, 
-  MoreHorizontal, Trash2, Loader2
+  MoreHorizontal, Trash2, Loader2, Network, Edit
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,11 +34,16 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import KnowledgeGraph from '@/components/knowledge/KnowledgeGraph';
+import ArticleEditor from '@/components/knowledge/ArticleEditor';
 
 export default function Knowledge() {
   const [currentOrg, setCurrentOrg] = useState(null);
   const [user, setUser] = useState(null);
   const [addDialog, setAddDialog] = useState({ open: false, type: 'manual' });
+  const [editingArticle, setEditingArticle] = useState(null);
+  const [showGraph, setShowGraph] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -75,6 +80,56 @@ export default function Knowledge() {
     queryKey: ['knowledge', currentOrg?.id],
     queryFn: () => currentOrg ? base44.entities.KnowledgeBase.filter({ org_id: currentOrg.id }, '-created_date') : [],
     enabled: !!currentOrg,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      await base44.entities.KnowledgeBase.update(id, data);
+
+      // Update backlinks if linked_articles changed
+      if (data.linked_articles) {
+        const oldLinks = editingArticle?.linked_articles || [];
+        const newLinks = data.linked_articles;
+        
+        // Add backlinks to newly linked articles
+        const added = newLinks.filter(l => !oldLinks.includes(l));
+        for (const linkId of added) {
+          const targetArticle = knowledgeBase.find(a => a.id === linkId);
+          if (targetArticle) {
+            const updatedBacklinks = [...(targetArticle.backlinks || []), id];
+            await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
+          }
+        }
+
+        // Remove backlinks from unlinked articles
+        const removed = oldLinks.filter(l => !newLinks.includes(l));
+        for (const linkId of removed) {
+          const targetArticle = knowledgeBase.find(a => a.id === linkId);
+          if (targetArticle) {
+            const updatedBacklinks = (targetArticle.backlinks || []).filter(b => b !== id);
+            await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
+          }
+        }
+      }
+
+      await base44.entities.AuditLog.create({
+        org_id: currentOrg.id,
+        actor_email: user.email,
+        action: 'knowledge_updated',
+        action_category: 'data',
+        resource_type: 'KnowledgeBase',
+        resource_id: id,
+        status: 'success',
+      });
+    },
+    onSuccess: () => {
+      toast.success('Article updated');
+      queryClient.invalidateQueries({ queryKey: ['knowledge'] });
+      setEditingArticle(null);
+    },
+    onError: () => {
+      toast.error('Failed to update article');
+    },
   });
 
   const createMutation = useMutation({
@@ -118,7 +173,20 @@ export default function Knowledge() {
         category: data.category || undefined,
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
         is_active: true,
+        linked_articles: data.linked_articles || [],
+        parent_article_id: data.parent_article_id || undefined,
       });
+
+      // Add backlinks to linked articles
+      if (data.linked_articles?.length > 0) {
+        for (const linkId of data.linked_articles) {
+          const targetArticle = knowledgeBase.find(a => a.id === linkId);
+          if (targetArticle) {
+            const updatedBacklinks = [...(targetArticle.backlinks || []), kb.id];
+            await base44.entities.KnowledgeBase.update(linkId, { backlinks: updatedBacklinks });
+          }
+        }
+      }
 
       await base44.entities.AuditLog.create({
         org_id: currentOrg.id,
@@ -187,10 +255,16 @@ export default function Knowledge() {
               <p className="text-sm text-slate-500">Train your Copilot with organization-specific knowledge</p>
             </div>
           </div>
-          <Button onClick={() => setAddDialog({ open: true, type: 'manual' })}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Knowledge
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowGraph(!showGraph)}>
+              <Network className="h-4 w-4 mr-2" />
+              {showGraph ? 'List View' : 'Graph View'}
+            </Button>
+            <Button onClick={() => setAddDialog({ open: true, type: 'manual' })}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Knowledge
+            </Button>
+          </div>
         </div>
 
         {activeCount > 0 && (
@@ -198,6 +272,18 @@ export default function Knowledge() {
             <p className="text-sm text-blue-700">
               <strong>{activeCount}</strong> active document{activeCount !== 1 ? 's' : ''} available to Copilot
             </p>
+          </div>
+        )}
+
+        {showGraph && knowledgeBase.length > 0 && (
+          <div className="mb-6">
+            <KnowledgeGraph 
+              articles={knowledgeBase}
+              onArticleClick={(id) => {
+                const article = knowledgeBase.find(a => a.id === id);
+                if (article) setEditingArticle(article);
+              }}
+            />
           </div>
         )}
 
@@ -257,6 +343,14 @@ export default function Knowledge() {
                         ))}
                       </div>
                     )}
+                    {(kb.linked_articles?.length > 0 || kb.backlinks?.length > 0) && (
+                      <div className="mt-2 pt-2 border-t border-slate-100">
+                        <p className="text-xs text-slate-500">
+                          <LinkIcon className="h-3 w-3 inline mr-1" />
+                          {kb.linked_articles?.length || 0} outgoing, {kb.backlinks?.length || 0} incoming links
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
@@ -270,6 +364,10 @@ export default function Knowledge() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditingArticle(kb)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => deleteMutation.mutate(kb)} className="text-red-600">
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
@@ -393,6 +491,15 @@ export default function Knowledge() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {editingArticle && (
+          <ArticleEditor
+            article={editingArticle}
+            allArticles={knowledgeBase}
+            onSave={(data) => updateMutation.mutate({ id: editingArticle.id, data })}
+            onCancel={() => setEditingArticle(null)}
+          />
+        )}
       </div>
     </div>
   );

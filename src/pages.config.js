@@ -2,13 +2,13 @@ import Approvals from './pages/Approvals';
 import Copilot from './pages/Copilot';
 import Dashboard from './pages/Dashboard';
 import Docs from './pages/Docs';
+import IntegrationConfig from './pages/IntegrationConfig';
+import IntegrationHealth from './pages/IntegrationHealth';
+import IntegrationSetup from './pages/IntegrationSetup';
 import Knowledge from './pages/Knowledge';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import SystemHealth from './pages/SystemHealth';
-import IntegrationHealth from './pages/IntegrationHealth';
-import IntegrationConfig from './pages/IntegrationConfig';
-import IntegrationSetup from './pages/IntegrationSetup';
 import WorkflowBuilder from './pages/WorkflowBuilder';
 import __Layout from './Layout.jsx';
 
@@ -18,13 +18,13 @@ export const PAGES = {
     "Copilot": Copilot,
     "Dashboard": Dashboard,
     "Docs": Docs,
+    "IntegrationConfig": IntegrationConfig,
+    "IntegrationHealth": IntegrationHealth,
+    "IntegrationSetup": IntegrationSetup,
     "Knowledge": Knowledge,
     "Onboarding": Onboarding,
     "Settings": Settings,
     "SystemHealth": SystemHealth,
-    "IntegrationHealth": IntegrationHealth,
-    "IntegrationConfig": IntegrationConfig,
-    "IntegrationSetup": IntegrationSetup,
     "WorkflowBuilder": WorkflowBuilder,
 }
 
