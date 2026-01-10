@@ -217,6 +217,7 @@ export default function Layout({ children, currentPageName }) {
         onOpenChange={setSearchOpen}
         recentSearches={['quarterly goals', 'team metrics', 'project status']}
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
