@@ -24,6 +24,8 @@ export default function Settings() {
   const [user, setUser] = useState(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [orgName, setOrgName] = useState('');
+  const [changeRoleDialogOpen, setChangeRoleDialogOpen] = useState(false);
+  const [selectedMemberForRole, setSelectedMemberForRole] = useState(null);
   
   const queryClient = useQueryClient();
 
@@ -263,6 +265,21 @@ export default function Settings() {
               members={members}
               currentUserEmail={user?.email}
               loading={membersLoading}
+              onRoleChange={(member) => {
+                setSelectedMemberForRole(member);
+                setChangeRoleDialogOpen(true);
+              }}
+              onRemove={(member) => {
+                if (confirm(`Remove ${member.user_email} from organization?`)) {
+                  toast.info('Member removal requires approval workflow');
+                }
+              }}
+              onResendInvite={(member) => {
+                inviteMemberMutation.mutate({ 
+                  email: member.user_email, 
+                  role: member.role 
+                });
+              }}
             />
           </TabsContent>
 
