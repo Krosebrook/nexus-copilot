@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { format } from 'date-fns';
-import { CheckCircle, XCircle, Clock, Loader2, ChevronDown, ChevronRight, Bot } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import ExecutionCard from './ExecutionCard';
 
 export default function WorkflowExecutionMonitor({ workflowId, orgId }) {
   const [expandedExecution, setExpandedExecution] = useState(null);
@@ -20,13 +18,6 @@ export default function WorkflowExecutionMonitor({ workflowId, orgId }) {
     enabled: !!workflowId && !!orgId,
     refetchInterval: 5000, // Refresh every 5 seconds
   });
-
-  const statusConfig = {
-    running: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-50', label: 'Running', spin: true },
-    completed: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', label: 'Completed' },
-    failed: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'Failed' },
-    cancelled: { icon: XCircle, color: 'text-slate-500', bg: 'bg-slate-50', label: 'Cancelled' },
-  };
 
   if (isLoading) {
     return (
