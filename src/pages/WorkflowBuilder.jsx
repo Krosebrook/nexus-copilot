@@ -12,9 +12,10 @@ import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog';
 import WorkflowSuggestions from '@/components/workflow/WorkflowSuggestions';
 import NextStepSuggestions from '@/components/workflow/NextStepSuggestions';
 import WorkflowExecutionMonitor from '@/components/workflow/WorkflowExecutionMonitor';
-import PermissionGuard from '@/components/rbac/PermissionGuard';
+import PermissionGuard, { usePermissions } from '@/components/rbac/PermissionGuard';
 
 export default function WorkflowBuilder() {
+  const { can } = usePermissions();
   const [currentOrg, setCurrentOrg] = useState(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -283,7 +284,7 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
   };
 
   return (
-    <PermissionGuard permission={['manage_integrations', 'admin']} requireAny fallback={
+    <PermissionGuard permission="manage_workflows" fallback={
       <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
         <div className="text-center">
           <Workflow className="h-12 w-12 text-slate-300 mx-auto mb-4" />
@@ -298,14 +299,16 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
             <div className="p-6 border-b border-slate-200">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-lg font-semibold text-slate-900">Workflows</h1>
-                <Button
-                  size="sm"
-                  onClick={() => createWorkflowMutation.mutate()}
-                  disabled={createWorkflowMutation.isPending}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New
-                </Button>
+                {can('create_workflows') && (
+                  <Button
+                    size="sm"
+                    onClick={() => createWorkflowMutation.mutate()}
+                    disabled={createWorkflowMutation.isPending}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -343,21 +346,25 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => setShowTriggerDialog(true)}>
-                      Configure Trigger
-                    </Button>
-                    {!isEditing ? (
-                      <Button onClick={() => setIsEditing(true)}>Edit Workflow</Button>
-                    ) : (
-                      <Button onClick={() => {
-                        updateWorkflowMutation.mutate({
-                          workflowId: selectedWorkflow.id,
-                          updates: selectedWorkflow,
-                        });
-                        setIsEditing(false);
-                      }}>
-                        Save Changes
-                      </Button>
+                    {can('edit_workflows') && (
+                      <>
+                        <Button variant="outline" onClick={() => setShowTriggerDialog(true)}>
+                          Configure Trigger
+                        </Button>
+                        {!isEditing ? (
+                          <Button onClick={() => setIsEditing(true)}>Edit Workflow</Button>
+                        ) : (
+                          <Button onClick={() => {
+                            updateWorkflowMutation.mutate({
+                              workflowId: selectedWorkflow.id,
+                              updates: selectedWorkflow,
+                            });
+                            setIsEditing(false);
+                          }}>
+                            Save Changes
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -395,10 +402,12 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
                 <div className="text-center">
                   <Workflow className="h-16 w-16 text-slate-300 mx-auto mb-4" />
                   <p className="text-slate-500 mb-4">Select a workflow or create a new one</p>
-                  <Button onClick={() => createWorkflowMutation.mutate()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Workflow
-                  </Button>
+                  {can('create_workflows') && (
+                    <Button onClick={() => createWorkflowMutation.mutate()}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Workflow
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

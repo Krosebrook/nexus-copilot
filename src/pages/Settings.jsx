@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 import MemberList from '@/components/admin/MemberList';
+import ChangeRoleDialog from '@/components/admin/ChangeRoleDialog';
 import IntegrationCard from '@/components/admin/IntegrationCard';
 import AuditLogTable from '@/components/admin/AuditLogTable';
 import PlanBadge from '@/components/shared/PlanBadge';
@@ -97,6 +98,18 @@ export default function Settings() {
   });
 
   // Invite member mutation
+  const changeRoleMutation = useMutation({
+    mutationFn: async ({ memberId, newRole }) => {
+      await base44.entities.Membership.update(memberId, { role: newRole });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      toast.success('Role updated successfully');
+      setChangeRoleDialogOpen(false);
+      setSelectedMemberForRole(null);
+    },
+  });
+
   const inviteMemberMutation = useMutation({
     mutationFn: async ({ email, role }) => {
       // Create membership
@@ -322,6 +335,21 @@ export default function Settings() {
           loading={inviteMemberMutation.isPending}
         />
       </div>
+
+      {/* Change Role Dialog */}
+      {selectedMemberForRole && (
+        <ChangeRoleDialog
+          open={changeRoleDialogOpen}
+          onOpenChange={setChangeRoleDialogOpen}
+          member={selectedMemberForRole}
+          onConfirm={(newRole) => {
+            changeRoleMutation.mutate({
+              memberId: selectedMemberForRole.id,
+              newRole,
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
