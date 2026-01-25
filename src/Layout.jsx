@@ -34,6 +34,23 @@ const NAV_ITEMS = [
 // Pages without layout
 const STANDALONE_PAGES = ['Onboarding'];
 
+// Check if user needs onboarding
+const checkOnboarding = async () => {
+  try {
+    const userData = await base44.auth.me();
+    const memberships = await base44.entities.Membership.filter({ 
+      user_email: userData.email,
+      status: 'active'
+    });
+    
+    if (memberships.length === 0) {
+      window.location.href = createPageUrl('Onboarding');
+    }
+  } catch (e) {
+    // Not logged in
+  }
+};
+
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [currentOrg, setCurrentOrg] = useState(null);
@@ -52,6 +69,12 @@ export default function Layout({ children, currentPageName }) {
           status: 'active' 
         });
         
+        if (memberships.length === 0 && !STANDALONE_PAGES.includes(currentPageName)) {
+          // User has no org, redirect to onboarding
+          window.location.href = createPageUrl('Onboarding');
+          return;
+        }
+        
         if (memberships.length > 0) {
           const orgs = await base44.entities.Organization.filter({ id: memberships[0].org_id });
           if (orgs.length > 0) setCurrentOrg(orgs[0]);
@@ -61,7 +84,7 @@ export default function Layout({ children, currentPageName }) {
       }
     };
     fetchUser();
-  }, []);
+  }, [currentPageName]);
 
   // Standalone pages render without layout
   if (STANDALONE_PAGES.includes(currentPageName)) {

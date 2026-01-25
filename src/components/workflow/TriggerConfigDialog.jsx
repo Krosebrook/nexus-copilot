@@ -37,6 +37,7 @@ export default function TriggerConfigDialog({ open, onOpenChange, workflow, onSa
               <SelectContent>
                 <SelectItem value="manual">Manual - Run on demand</SelectItem>
                 <SelectItem value="schedule">Schedule - Run on a timer</SelectItem>
+                <SelectItem value="webhook">Webhook - External HTTP trigger</SelectItem>
                 <SelectItem value="integration_event">Integration Event - When something happens</SelectItem>
                 <SelectItem value="copilot_query">Copilot Query - After AI response</SelectItem>
               </SelectContent>
@@ -124,33 +125,115 @@ export default function TriggerConfigDialog({ open, onOpenChange, workflow, onSa
             </>
           )}
 
+          {triggerType === 'webhook' && (
+            <>
+              <div className="p-4 bg-blue-50 rounded-lg space-y-2">
+                <Label>Webhook URL</Label>
+                <p className="text-xs text-slate-600 font-mono break-all">
+                  {workflow?.id ? 
+                    `${window.location.origin}/functions/webhookHandler?workflow_id=${workflow.id}&secret=${config.webhook_secret || 'GENERATE_SECRET'}` :
+                    'Save workflow first to generate URL'}
+                </p>
+                <p className="text-xs text-slate-500">Use this URL in external services to trigger the workflow</p>
+              </div>
+
+              <div>
+                <Label>Webhook Secret</Label>
+                <Input
+                  value={config.webhook_secret || ''}
+                  onChange={(e) => setConfig({ ...config, webhook_secret: e.target.value })}
+                  placeholder="Auto-generated secure token"
+                />
+                {!config.webhook_secret && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => setConfig({ 
+                      ...config, 
+                      webhook_secret: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) 
+                    })}
+                  >
+                    Generate Secret
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+
           {triggerType === 'integration_event' && (
             <>
               <div>
                 <Label>Integration Type</Label>
                 <Select
                   value={config.integration_type || ''}
-                  onValueChange={(integration_type) => setConfig({ ...config, integration_type })}
+                  onValueChange={(integration_type) => setConfig({ ...config, integration_type, event_type: '' })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select integration" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="slack">Slack</SelectItem>
-                    <SelectItem value="notion">Notion</SelectItem>
-                    <SelectItem value="github">GitHub</SelectItem>
+                    <SelectItem value="googledrive">Google Drive</SelectItem>
+                    <SelectItem value="gmail">Gmail</SelectItem>
                     <SelectItem value="jira">Jira</SelectItem>
+                    <SelectItem value="slack">Slack</SelectItem>
+                    <SelectItem value="github">GitHub</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label>Event Type</Label>
-                <Input
-                  value={config.event_type || ''}
-                  onChange={(e) => setConfig({ ...config, event_type: e.target.value })}
-                  placeholder="e.g., new_message, issue_created"
-                />
+              {config.integration_type && (
+                <div>
+                  <Label>Event Type</Label>
+                  <Select
+                    value={config.event_type || ''}
+                    onValueChange={(event_type) => setConfig({ ...config, event_type })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {config.integration_type === 'googledrive' && (
+                        <>
+                          <SelectItem value="file.created">New File Created</SelectItem>
+                          <SelectItem value="file.updated">File Updated</SelectItem>
+                          <SelectItem value="file.deleted">File Deleted</SelectItem>
+                        </>
+                      )}
+                      {config.integration_type === 'gmail' && (
+                        <>
+                          <SelectItem value="email.received">New Email Received</SelectItem>
+                          <SelectItem value="email.sent">Email Sent</SelectItem>
+                        </>
+                      )}
+                      {config.integration_type === 'jira' && (
+                        <>
+                          <SelectItem value="issue.created">New Issue Created</SelectItem>
+                          <SelectItem value="issue.updated">Issue Updated</SelectItem>
+                          <SelectItem value="issue.status_changed">Issue Status Changed</SelectItem>
+                        </>
+                      )}
+                      {config.integration_type === 'slack' && (
+                        <>
+                          <SelectItem value="message.posted">Message Posted</SelectItem>
+                          <SelectItem value="channel.created">Channel Created</SelectItem>
+                        </>
+                      )}
+                      {config.integration_type === 'github' && (
+                        <>
+                          <SelectItem value="push">Code Pushed</SelectItem>
+                          <SelectItem value="pull_request.opened">Pull Request Opened</SelectItem>
+                          <SelectItem value="issue.opened">Issue Opened</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
+                ⚠️ You'll need to configure webhooks in the external service to point to this workflow
               </div>
             </>
           )}

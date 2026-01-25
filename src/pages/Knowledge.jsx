@@ -37,6 +37,7 @@ import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import KnowledgeGraph from '@/components/knowledge/KnowledgeGraph';
 import PermissionGuard, { usePermissions } from '@/components/rbac/PermissionGuard';
+import AIEnhancementsPanel from '@/components/knowledge/AIEnhancementsPanel';
 import ArticleEditor from '@/components/knowledge/ArticleEditor';
 
 export default function Knowledge() {
