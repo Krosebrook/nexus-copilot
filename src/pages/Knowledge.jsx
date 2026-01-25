@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Book, Plus, Link as LinkIcon, FileText, 
-  MoreHorizontal, Trash2, Loader2, Network, Edit
+  MoreHorizontal, Trash2, Loader2, Network, Edit, Sparkles
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,11 +41,12 @@ import AIEnhancementsPanel from '@/components/knowledge/AIEnhancementsPanel';
 import ArticleEditor from '@/components/knowledge/ArticleEditor';
 
 export default function Knowledge() {
+  const { can, role } = usePermissions();
   const [currentOrg, setCurrentOrg] = useState(null);
   const [user, setUser] = useState(null);
   const [addDialog, setAddDialog] = useState({ open: false, type: 'manual' });
   const [editingArticle, setEditingArticle] = useState(null);
-  const [showGraph, setShowGraph] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list', 'graph', 'ai'
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -294,14 +295,35 @@ export default function Knowledge() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowGraph(!showGraph)}>
-              <Network className="h-4 w-4 mr-2" />
-              {showGraph ? 'List View' : 'Graph View'}
-            </Button>
-            <Button onClick={() => setAddDialog({ open: true, type: 'manual' })}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Knowledge
-            </Button>
+            <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-1 bg-white">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                List
+              </Button>
+              <Button
+                variant={viewMode === 'graph' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('graph')}
+              >
+                <Network className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'ai' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('ai')}
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
+            </div>
+            <PermissionGuard permission="create_knowledge">
+              <Button onClick={() => setAddDialog({ open: true, type: 'manual' })}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Knowledge
+              </Button>
+            </PermissionGuard>
           </div>
         </div>
 
@@ -313,7 +335,9 @@ export default function Knowledge() {
           </div>
         )}
 
-        {showGraph && knowledgeBase.length > 0 && (
+        {viewMode === 'ai' ? (
+          <AIEnhancementsPanel orgId={currentOrg?.id} articles={knowledgeBase} />
+        ) : viewMode === 'graph' && knowledgeBase.length > 0 ? (
           <div className="mb-6">
             <KnowledgeGraph 
               articles={knowledgeBase}
@@ -323,9 +347,9 @@ export default function Knowledge() {
               }}
             />
           </div>
-        )}
+        ) : null}
 
-        {isLoading ? (
+        {viewMode === 'list' && (isLoading ? (
           <div className="space-y-3">
             {[1,2,3].map(i => (
               <div key={i} className="h-24 bg-slate-100 rounded-xl animate-pulse" />
@@ -417,7 +441,7 @@ export default function Knowledge() {
               </div>
             ))}
           </div>
-        )}
+        ))}
 
         <Dialog open={addDialog.open} onOpenChange={(open) => !open && setAddDialog({ open: false, type: 'manual' })}>
           <DialogContent className="max-w-2xl">
