@@ -73,6 +73,60 @@ Deno.serve(async (req) => {
             result = { status: 'created', response: queryResult };
             break;
 
+          case 'categorize_article':
+            if (step.config?.article_id) {
+              const categorizeRes = await base44.asServiceRole.functions.invoke('knowledgeAI', {
+                action: 'categorize',
+                article_id: step.config.article_id,
+                content: step.config.content || '',
+              });
+              
+              if (categorizeRes.data?.category) {
+                await base44.asServiceRole.entities.KnowledgeBase.update(step.config.article_id, {
+                  category: categorizeRes.data.category,
+                  tags: categorizeRes.data.tags,
+                });
+              }
+              result = categorizeRes.data;
+            }
+            break;
+
+          case 'summarize_content':
+            const summaryRes = await base44.asServiceRole.functions.invoke('knowledgeAI', {
+              action: 'summarize',
+              content: step.config?.content || JSON.stringify(body),
+            });
+            result = summaryRes.data;
+            break;
+
+          case 'create_entity':
+            if (step.config?.entity_name && step.config?.entity_data) {
+              const entityData = typeof step.config.entity_data === 'string' 
+                ? JSON.parse(step.config.entity_data) 
+                : step.config.entity_data;
+              
+              const created = await base44.asServiceRole.entities[step.config.entity_name].create({
+                org_id: wf.org_id,
+                ...entityData,
+              });
+              result = { status: 'created', entity_id: created.id };
+            }
+            break;
+
+          case 'update_entity':
+            if (step.config?.entity_name && step.config?.entity_id && step.config?.entity_data) {
+              const updateData = typeof step.config.entity_data === 'string' 
+                ? JSON.parse(step.config.entity_data) 
+                : step.config.entity_data;
+              
+              await base44.asServiceRole.entities[step.config.entity_name].update(
+                step.config.entity_id,
+                updateData
+              );
+              result = { status: 'updated' };
+            }
+            break;
+
           case 'webhook':
             if (step.config?.url) {
               const webhookRes = await fetch(step.config.url, {

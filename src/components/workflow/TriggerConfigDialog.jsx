@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import WebhookSetupGuide from './WebhookSetupGuide';
+import IntegrationEventGuide from './IntegrationEventGuide';
 
 export default function TriggerConfigDialog({ open, onOpenChange, workflow, onSave }) {
   const [triggerType, setTriggerType] = useState(workflow?.trigger_type || 'manual');
@@ -233,13 +234,32 @@ export default function TriggerConfigDialog({ open, onOpenChange, workflow, onSa
                 </div>
               )}
 
-              {config.integration_type && (
-                <WebhookSetupGuide
-                  integrationType={config.integration_type}
-                  webhookUrl={workflow?.id ? 
-                    `${window.location.origin}/functions/webhookHandler?workflow_id=${workflow.id}&secret=${config.webhook_secret || 'SET_SECRET_FIRST'}` :
-                    'Save workflow first'}
-                />
+              {config.integration_type && config.event_type && (
+                <>
+                  <IntegrationEventGuide
+                    integrationType={config.integration_type}
+                    eventType={config.event_type}
+                  />
+                  <WebhookSetupGuide
+                    integrationType={config.integration_type}
+                    webhookUrl={workflow?.id ? 
+                      `${window.location.origin}/functions/webhookHandler?workflow_id=${workflow.id}&secret=${config.webhook_secret || 'GENERATE_SECRET'}` :
+                      'Save workflow first'}
+                  />
+                </>
+              )}
+
+              {config.integration_type && !config.webhook_secret && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setConfig({ 
+                    ...config, 
+                    webhook_secret: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) 
+                  })}
+                >
+                  Generate Webhook Secret
+                </Button>
               )}
             </>
           )}

@@ -59,9 +59,41 @@ export default function AIEnhancementsPanel({ orgId, articles }) {
         tags: data.tags,
       });
       
-      toast.success('Article categorized');
+      toast.success(`Categorized as "${data.category}" with ${data.tags.length} tags`);
     } catch (e) {
       toast.error('Failed to categorize');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const autoCategorizeAll = async () => {
+    const uncategorized = articles.filter(a => !a.category || a.tags?.length === 0);
+    if (uncategorized.length === 0) {
+      toast.info('All articles are already categorized');
+      return;
+    }
+
+    setLoading(true);
+    let success = 0;
+    try {
+      for (const article of uncategorized.slice(0, 10)) {
+        try {
+          const { data } = await base44.functions.invoke('knowledgeAI', {
+            action: 'categorize',
+            content: article.content,
+          });
+          
+          await base44.entities.KnowledgeBase.update(article.id, {
+            category: data.category,
+            tags: data.tags,
+          });
+          success++;
+        } catch (e) {
+          console.error('Failed to categorize article:', article.id);
+        }
+      }
+      toast.success(`Categorized ${success} articles`);
     } finally {
       setLoading(false);
     }
@@ -181,7 +213,13 @@ export default function AIEnhancementsPanel({ orgId, articles }) {
                 Let AI suggest categories and tags for uncategorized articles
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {articles.filter(a => !a.category || a.tags?.length === 0).length > 0 && (
+                <Button onClick={autoCategorizeAll} disabled={loading} className="w-full">
+                  {loading ? 'Categorizing...' : `Auto-Categorize All (${articles.filter(a => !a.category || a.tags?.length === 0).length})`}
+                </Button>
+              )}
+
               <div className="space-y-2">
                 {articles.filter(a => !a.category || a.tags?.length === 0).slice(0, 10).map(article => (
                   <div key={article.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
@@ -200,6 +238,12 @@ export default function AIEnhancementsPanel({ orgId, articles }) {
                     </Button>
                   </div>
                 ))}
+                
+                {articles.filter(a => !a.category || a.tags?.length === 0).length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-slate-500">All articles are categorized! 🎉</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

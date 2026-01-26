@@ -11,6 +11,7 @@ import ResponseCard from '@/components/copilot/ResponseCard';
 import ProcessingIndicator from '@/components/copilot/ProcessingIndicator';
 import EmptyState from '@/components/copilot/EmptyState';
 import QueryHistory from '@/components/copilot/QueryHistory';
+import SuggestedArticles from '@/components/copilot/SuggestedArticles';
 
 export default function Copilot() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -403,12 +404,19 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                       key={selectedQuery.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
                     >
                       <ResponseCard
                         query={selectedQuery}
                         onSave={(q) => toggleSaveMutation.mutate(q)}
                         onFeedback={(q, feedback) => submitFeedbackMutation.mutate({ query: q, feedback })}
                       />
+                      {preferences?.copilot_show_sources && (
+                        <SuggestedArticles 
+                          query={selectedQuery.prompt} 
+                          orgId={currentOrg?.id}
+                        />
+                      )}
                     </motion.div>
                   ) : (
                     queries.slice(0, 5).map((query) => (
