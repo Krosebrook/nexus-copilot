@@ -12,7 +12,6 @@ import ProcessingIndicator from '@/components/copilot/ProcessingIndicator';
 import EmptyState from '@/components/copilot/EmptyState';
 import QueryHistory from '@/components/copilot/QueryHistory';
 import SuggestedArticles from '@/components/copilot/SuggestedArticles';
-import SuggestedArticles from '@/components/copilot/SuggestedArticles';
 
 export default function Copilot() {
   const [isProcessing, setIsProcessing] = useState(false);
