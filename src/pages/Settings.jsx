@@ -3,8 +3,10 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Settings as SettingsIcon, Users, Shield, Plug, 
-  Activity, UserPlus
+  Activity, UserPlus, Sparkles
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -181,6 +183,24 @@ export default function Settings() {
             <p className="text-sm text-slate-500">Manage your workspace settings</p>
           </div>
         </div>
+
+        {/* Quick Link to Copilot Settings */}
+        <Card className="mb-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white border-0">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-5 w-5" />
+              <div>
+                <p className="font-medium">Copilot Settings</p>
+                <p className="text-xs text-slate-300">Customize Copilot behavior and preferences</p>
+              </div>
+            </div>
+            <Button asChild variant="secondary" size="sm">
+              <Link to={createPageUrl('CopilotSettings')}>
+                Configure
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="general" className="space-y-6">
           <TabsList className="bg-white border border-slate-200 p-1">
