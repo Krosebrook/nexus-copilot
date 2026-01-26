@@ -16,6 +16,21 @@ import IntegrationEventGuide from './IntegrationEventGuide';
 export default function TriggerConfigDialog({ open, onOpenChange, workflow, onSave }) {
   const [triggerType, setTriggerType] = useState(workflow?.trigger_type || 'manual');
   const [config, setConfig] = useState(workflow?.trigger_config || {});
+  const [entities, setEntities] = useState([]);
+
+  useEffect(() => {
+    const fetchEntities = async () => {
+      try {
+        // Get available entities from the app
+        const response = await fetch('/.well-known/base44/entity-metadata');
+        const data = await response.json();
+        setEntities(Object.keys(data || {}).filter(e => !['User', 'Membership', 'Organization'].includes(e)));
+      } catch (e) {
+        console.error('Failed to fetch entities:', e);
+      }
+    };
+    fetchEntities();
+  }, []);
 
   const handleSave = () => {
     onSave({ trigger_type: triggerType, trigger_config: config });

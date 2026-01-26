@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import WorkflowList from '@/components/workflow/WorkflowList';
-import WorkflowCanvas from '@/components/workflow/WorkflowCanvas';
+import VisualWorkflowCanvas from '@/components/workflow/VisualWorkflowCanvas';
 import WorkflowSidebar from '@/components/workflow/WorkflowSidebar';
 import TriggerConfigDialog from '@/components/workflow/TriggerConfigDialog';
 import WorkflowSuggestions from '@/components/workflow/WorkflowSuggestions';
@@ -379,7 +379,7 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
                         />
                       </div>
                     )}
-                    <WorkflowCanvas
+                    <VisualWorkflowCanvas
                       workflow={selectedWorkflow}
                       isEditing={isEditing}
                       onUpdate={(updates) => setSelectedWorkflow({ ...selectedWorkflow, ...updates })}
