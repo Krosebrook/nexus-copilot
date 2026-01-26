@@ -27,7 +27,6 @@ const NAV_ITEMS = [
   { name: 'Knowledge', href: 'Knowledge', icon: Book },
   { name: 'Workflows', href: 'WorkflowBuilder', icon: Activity },
   { name: 'Approvals', href: 'Approvals', icon: CheckCircle },
-  { name: 'Docs', href: 'Docs', icon: Book },
   { name: 'Settings', href: 'Settings', icon: Settings },
 ];
 
