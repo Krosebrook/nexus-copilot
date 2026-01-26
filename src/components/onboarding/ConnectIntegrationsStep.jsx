@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plug, Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from '@/lib/utils';
 
 const INTEGRATIONS = [
   { id: 'slack', name: 'Slack', description: 'Team communication', color: 'bg-purple-100 text-purple-600' },
@@ -74,8 +75,4 @@ export default function ConnectIntegrationsStep({ onNext, onSkip }) {
       </div>
     </div>
   );
-}
-
-function cn(...classes) {
-  return classes.filter(Boolean).join(' ');
 }
