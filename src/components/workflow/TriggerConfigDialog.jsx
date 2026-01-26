@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import WebhookSetupGuide from './WebhookSetupGuide';
 
 export default function TriggerConfigDialog({ open, onOpenChange, workflow, onSave }) {
   const [triggerType, setTriggerType] = useState(workflow?.trigger_type || 'manual');
@@ -232,9 +233,14 @@ export default function TriggerConfigDialog({ open, onOpenChange, workflow, onSa
                 </div>
               )}
 
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
-                ⚠️ You'll need to configure webhooks in the external service to point to this workflow
-              </div>
+              {config.integration_type && (
+                <WebhookSetupGuide
+                  integrationType={config.integration_type}
+                  webhookUrl={workflow?.id ? 
+                    `${window.location.origin}/functions/webhookHandler?workflow_id=${workflow.id}&secret=${config.webhook_secret || 'SET_SECRET_FIRST'}` :
+                    'Save workflow first'}
+                />
+              )}
             </>
           )}
 

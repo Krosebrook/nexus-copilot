@@ -39,6 +39,7 @@ import KnowledgeGraph from '@/components/knowledge/KnowledgeGraph';
 import PermissionGuard, { usePermissions } from '@/components/rbac/PermissionGuard';
 import AIEnhancementsPanel from '@/components/knowledge/AIEnhancementsPanel';
 import ArticleEditor from '@/components/knowledge/ArticleEditor';
+import ArticleActions from '@/components/knowledge/ArticleActions';
 
 export default function Knowledge() {
   const { can, role } = usePermissions();
@@ -405,6 +406,14 @@ export default function Knowledge() {
                         ))}
                       </div>
                     )}
+                    
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                      <ArticleActions
+                        article={kb}
+                        allArticles={knowledgeBase}
+                        onUpdate={() => queryClient.invalidateQueries({ queryKey: ['knowledge'] })}
+                      />
+                    </div>
                     {(kb.linked_articles?.length > 0 || kb.backlinks?.length > 0) && (
                       <div className="mt-2 pt-2 border-t border-slate-100">
                         <p className="text-xs text-slate-500">
