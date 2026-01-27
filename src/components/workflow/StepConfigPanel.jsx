@@ -15,7 +15,7 @@ const ACTION_TYPES = [
   { value: 'send_email', label: 'Send Email' },
   { value: 'webhook', label: 'Call Webhook' },
   { value: 'integration_action', label: 'Integration Action' },
-  { value: 'ai_agent', label: 'AI Agent Task' },
+  { value: 'ai_agent', label: 'Run AI Agent' },
   { value: 'knowledge_query', label: 'Query Knowledge Base' },
   { value: 'create_entity', label: 'Create Entity Record' },
   { value: 'update_entity', label: 'Update Entity Record' },
@@ -248,6 +248,23 @@ export default function StepConfigPanel({ step, workflow, onUpdate, onClose }) {
                     onChange={(e) => updateConfig('entity_name', e.target.value)}
                     placeholder="e.g., Task, Project"
                   />
+                </div>
+              </>
+            )}
+
+            {localStep.config?.action === 'ai_agent' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Agent Task</Label>
+                  <Textarea
+                    value={localStep.config?.agent_task || ''}
+                    onChange={(e) => updateConfig('agent_task', e.target.value)}
+                    placeholder="Describe what the agent should do..."
+                    rows={3}
+                  />
+                  <p className="text-xs text-slate-500">
+                    The agent will plan and execute this task autonomously
+                  </p>
                 </div>
               </>
             )}

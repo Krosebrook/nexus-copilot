@@ -104,6 +104,9 @@ export default function VisualStepNode({
           {step.config?.parallel_branches && (
             <p className="text-xs">{step.config.parallel_branches.length} parallel branches</p>
           )}
+          {step.config?.agent_task && (
+            <p className="text-xs">Task: {step.config.agent_task.substring(0, 50)}...</p>
+          )}
           {step.config?.data_mapping && Object.keys(step.config.data_mapping).length > 0 && (
             <div className="text-xs">
               <p className="font-medium text-slate-700 mb-1">Data Mapping:</p>

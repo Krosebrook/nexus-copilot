@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { name: 'Copilot', href: 'Copilot', icon: Sparkles },
   { name: 'Knowledge', href: 'Knowledge', icon: Book },
   { name: 'Workflows', href: 'WorkflowBuilder', icon: Activity },
+  { name: 'Agents', href: 'AgentBuilder', icon: Workflow },
   { name: 'Approvals', href: 'Approvals', icon: CheckCircle },
   { name: 'Settings', href: 'Settings', icon: Settings },
 ];

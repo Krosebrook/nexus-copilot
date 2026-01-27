@@ -11,6 +11,7 @@ import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import SystemHealth from './pages/SystemHealth';
 import WorkflowBuilder from './pages/WorkflowBuilder';
+import AgentBuilder from './pages/AgentBuilder';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "Settings": Settings,
     "SystemHealth": SystemHealth,
     "WorkflowBuilder": WorkflowBuilder,
+    "AgentBuilder": AgentBuilder,
 }
 
 export const pagesConfig = {

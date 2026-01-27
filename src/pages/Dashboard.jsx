@@ -14,6 +14,7 @@ import StatsCard from '@/components/admin/StatsCard';
 import ActivityFeed from '@/components/shared/ActivityFeed';
 import PlanBadge from '@/components/shared/PlanBadge';
 import ResponseCard from '@/components/copilot/ResponseCard';
+import CustomizableDashboard from '@/components/dashboard/CustomizableDashboard';
 
 export default function Dashboard() {
   const [currentOrg, setCurrentOrg] = useState(null);
@@ -123,6 +124,11 @@ export default function Dashboard() {
             change={-5}
             icon={Zap}
           />
+        </div>
+
+        {/* Customizable Widgets */}
+        <div className="mb-8">
+          <CustomizableDashboard orgId={currentOrg?.id} userEmail={user?.email} />
         </div>
 
         {/* Content Grid */}
