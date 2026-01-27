@@ -40,6 +40,8 @@ import PermissionGuard, { usePermissions } from '@/components/rbac/PermissionGua
 import AIEnhancementsPanel from '@/components/knowledge/AIEnhancementsPanel';
 import ArticleEditor from '@/components/knowledge/ArticleEditor';
 import ArticleActions from '@/components/knowledge/ArticleActions';
+import KnowledgeAssistant from '@/components/knowledge/KnowledgeAssistant';
+import ArticleVersionHistory from '@/components/knowledge/ArticleVersionHistory';
 
 export default function Knowledge() {
   const { can, role } = usePermissions();
@@ -89,6 +91,23 @@ export default function Knowledge() {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       try {
+        // Create version before updating
+        const oldArticle = knowledgeBase.find(a => a.id === id);
+        if (oldArticle) {
+          const versions = await base44.entities.KnowledgeVersion.filter({ article_id: id });
+          const maxVersion = Math.max(...versions.map(v => v.version_number), 0);
+          
+          await base44.entities.KnowledgeVersion.create({
+            org_id: currentOrg.id,
+            article_id: id,
+            version_number: maxVersion + 1,
+            title: data.title || oldArticle.title,
+            content: data.content || oldArticle.content,
+            change_summary: 'Article updated',
+            changed_by: user.email
+          });
+        }
+
         await base44.entities.KnowledgeBase.update(id, data);
 
         // Update backlinks if linked_articles changed
@@ -337,7 +356,16 @@ export default function Knowledge() {
         )}
 
         {viewMode === 'ai' ? (
-          <AIEnhancementsPanel orgId={currentOrg?.id} articles={knowledgeBase} />
+          <div className="space-y-6">
+            <KnowledgeAssistant 
+              orgId={currentOrg?.id}
+              onArticleClick={(id) => {
+                const article = knowledgeBase.find(a => a.id === id);
+                if (article) setEditingArticle(article);
+              }}
+            />
+            <AIEnhancementsPanel orgId={currentOrg?.id} articles={knowledgeBase} />
+          </div>
         ) : viewMode === 'graph' && knowledgeBase.length > 0 ? (
           <div className="mb-6">
             <KnowledgeGraph 
@@ -564,12 +592,33 @@ export default function Knowledge() {
         </Dialog>
 
         {editingArticle && (
-          <ArticleEditor
-            article={editingArticle}
-            allArticles={knowledgeBase}
-            onSave={(data) => updateMutation.mutate({ id: editingArticle.id, data })}
-            onCancel={() => setEditingArticle(null)}
-          />
+          <Dialog open={!!editingArticle} onOpenChange={(open) => !open && setEditingArticle(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+              <Tabs defaultValue="edit" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="edit">Edit Article</TabsTrigger>
+                  <TabsTrigger value="versions">Version History</TabsTrigger>
+                </TabsList>
+                <TabsContent value="edit">
+                  <ArticleEditor
+                    article={editingArticle}
+                    allArticles={knowledgeBase}
+                    onSave={(data) => updateMutation.mutate({ id: editingArticle.id, data })}
+                    onCancel={() => setEditingArticle(null)}
+                  />
+                </TabsContent>
+                <TabsContent value="versions">
+                  <ArticleVersionHistory
+                    article={editingArticle}
+                    onRestore={() => {
+                      queryClient.invalidateQueries({ queryKey: ['knowledge'] });
+                      setEditingArticle(null);
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </div>

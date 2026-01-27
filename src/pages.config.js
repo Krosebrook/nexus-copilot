@@ -1,5 +1,6 @@
 import Approvals from './pages/Approvals';
 import Copilot from './pages/Copilot';
+import CopilotSettings from './pages/CopilotSettings';
 import Dashboard from './pages/Dashboard';
 import Docs from './pages/Docs';
 import IntegrationConfig from './pages/IntegrationConfig';
@@ -10,13 +11,13 @@ import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import SystemHealth from './pages/SystemHealth';
 import WorkflowBuilder from './pages/WorkflowBuilder';
-import CopilotSettings from './pages/CopilotSettings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Approvals": Approvals,
     "Copilot": Copilot,
+    "CopilotSettings": CopilotSettings,
     "Dashboard": Dashboard,
     "Docs": Docs,
     "IntegrationConfig": IntegrationConfig,
@@ -27,7 +28,6 @@ export const PAGES = {
     "Settings": Settings,
     "SystemHealth": SystemHealth,
     "WorkflowBuilder": WorkflowBuilder,
-    "CopilotSettings": CopilotSettings,
 }
 
 export const pagesConfig = {
