@@ -844,8 +844,536 @@ export async function down(base44) {
 | AuditLog | 7 years | Compliance requirement |
 | BackgroundJob | 30 days | Auto-delete after completion |
 
+## Advanced Feature Entities
+
+### 9. Agent
+
+**Purpose**: Represents an AI agent with specific capabilities and persona.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  updated_date: timestamp,
+  
+  // Required fields
+  org_id: string,                // Foreign key to Organization
+  name: string,                  // Agent name
+  description: string,           // Agent purpose
+  status: string,                // 'active' | 'inactive' | 'archived'
+  
+  // Agent configuration
+  capabilities: string[],        // ['multi_step_planning', 'web_search', 'entity_crud', 'api_calls', 'send_email', 'generate_report']
+  persona: {
+    role: string,                // e.g., 'data analyst', 'customer support'
+    tone: string,                // 'professional' | 'casual' | 'technical'
+    expertise_areas: string[],   // Areas of expertise
+    custom_instructions: string  // Custom persona instructions
+  },
+  
+  // Tool integrations
+  available_tools: [
+    {
+      tool_id: string,           // Reference to AgentTool
+      config: object             // Tool-specific configuration
+    }
+  ],
+  
+  // Performance metrics
+  performance_metrics: {
+    total_executions: number,
+    success_rate: number,        // Percentage
+    avg_execution_time_ms: number,
+    user_satisfaction_avg: number // 0-5 rating
+  },
+  
+  // Learning data
+  learning_enabled: boolean,
+  learning_data: {
+    successful_patterns: array,  // Patterns that led to success
+    failed_patterns: array,      // Patterns that failed
+    suggested_refinements: array // Auto-generated suggestions
+  },
+  
+  // Sharing
+  visibility: string,            // 'private' | 'org' | 'public'
+  template_id: string,           // If created from template
+  is_template: boolean,          // Can be shared as template
+  
+  // Approval requirements
+  requires_human_approval: boolean,
+  approval_steps: string[],      // Which steps require approval
+  
+  created_by: string,            // User email
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `org_id`, `status`, `visibility`
+- Filter: `is_template`, `created_by`
+
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: December 30, 2024  
-**Next Review**: March 30, 2025
+### 10. AgentTool
+
+**Purpose**: Defines tools that agents can use to perform actions.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  updated_date: timestamp,
+  
+  // Required fields
+  name: string,                  // Tool name (e.g., 'send_email', 'generate_report')
+  description: string,           // What the tool does
+  category: string,              // 'communication' | 'data' | 'integration' | 'system'
+  
+  // Tool specification
+  function_name: string,         // Backend function to invoke
+  input_schema: object,          // JSON schema for inputs
+  output_schema: object,         // JSON schema for outputs
+  
+  // Configuration
+  requires_approval: boolean,    // Whether tool needs human approval
+  max_retries: number,
+  timeout_ms: number,
+  
+  // Availability
+  is_public: boolean,            // Available to all orgs
+  allowed_orgs: string[],        // Org IDs that can use this tool
+  
+  // Usage tracking
+  usage_count: number,
+  success_rate: number,
+  avg_execution_time_ms: number,
+  
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `category`, `is_public`
+- Filter: `name`
+
+---
+
+### 11. AgentExecution
+
+**Purpose**: Tracks individual agent execution runs.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  updated_date: timestamp,
+  
+  // Required fields
+  org_id: string,                // Foreign key to Organization
+  agent_id: string,              // Foreign key to Agent
+  user_email: string,            // User who triggered execution
+  task: string,                  // User's task description
+  status: string,                // 'planning' | 'executing' | 'completed' | 'failed' | 'awaiting_approval'
+  
+  // Execution plan
+  plan: [
+    {
+      step_number: number,
+      description: string,
+      action: string,
+      status: string,            // 'pending' | 'running' | 'completed' | 'failed' | 'awaiting_approval'
+      duration_ms: number,
+      result: object,
+      error: string,
+      tool_invocations: [
+        {
+          tool_id: string,
+          input: object,
+          output: object,
+          duration_ms: number
+        }
+      ]
+    }
+  ],
+  
+  // Results
+  result: object,
+  execution_time_ms: number,
+  error_message: string,
+  
+  // User feedback
+  user_feedback: {
+    rating: number,              // 1-5
+    comment: string,
+    helpful: boolean
+  },
+  
+  // Learning
+  was_learned_from: boolean,     // Used for training/improvement
+  
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `org_id`, `agent_id`, `status`, `user_email`
+- Sort: `-created_date`
+
+---
+
+### 12. AgentTemplate
+
+**Purpose**: Shareable agent configurations for marketplace.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  updated_date: timestamp,
+  
+  // Required fields
+  name: string,
+  description: string,
+  category: string,              // 'productivity' | 'analytics' | 'support' | 'automation'
+  
+  // Template data (copy of Agent entity)
+  agent_config: {
+    capabilities: string[],
+    persona: object,
+    available_tools: array
+  },
+  
+  // Marketplace info
+  author_org_id: string,
+  author_name: string,
+  version: string,               // Semantic versioning
+  visibility: string,            // 'org' | 'public'
+  
+  // Usage & ratings
+  install_count: number,
+  rating_avg: number,            // 0-5
+  rating_count: number,
+  reviews: [
+    {
+      user_email: string,
+      rating: number,
+      comment: string,
+      created_date: timestamp
+    }
+  ],
+  
+  // Marketing
+  icon_url: string,
+  screenshots: string[],
+  tags: string[],
+  use_cases: string[],
+  
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `category`, `visibility`, `author_org_id`
+- Sort: `-rating_avg`, `-install_count`
+
+---
+
+### 13. CustomReport
+
+**Purpose**: User-defined reports with scheduling.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  updated_date: timestamp,
+  
+  // Required fields
+  org_id: string,                // Foreign key to Organization
+  name: string,
+  description: string,
+  created_by: string,            // User email
+  
+  // Report configuration
+  report_type: string,           // 'queries' | 'agents' | 'workflows' | 'custom'
+  data_sources: [
+    {
+      entity_type: string,
+      filters: object,
+      aggregations: object
+    }
+  ],
+  
+  // Visualization
+  layout: object,                // Widget layout configuration
+  widgets: [
+    {
+      type: string,              // 'chart' | 'table' | 'metric' | 'text'
+      config: object
+    }
+  ],
+  
+  // Scheduling
+  schedule: {
+    enabled: boolean,
+    frequency: string,           // 'daily' | 'weekly' | 'monthly'
+    time: string,                // HH:MM
+    recipients: string[],        // Email addresses
+    format: string               // 'pdf' | 'csv' | 'excel'
+  },
+  
+  // Sharing
+  visibility: string,            // 'private' | 'team' | 'org'
+  shared_with: string[],         // User emails
+  
+  // Usage
+  last_generated: timestamp,
+  generation_count: number,
+  
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `org_id`, `created_by`
+- Filter: `report_type`, `visibility`
+
+---
+
+### 14. DashboardAlert
+
+**Purpose**: Threshold-based monitoring alerts.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  updated_date: timestamp,
+  
+  // Required fields
+  org_id: string,                // Foreign key to Organization
+  name: string,
+  description: string,
+  status: string,                // 'active' | 'paused' | 'triggered'
+  
+  // Alert condition
+  metric: string,                // 'query_success_rate' | 'agent_performance' | 'workflow_failures'
+  entity_type: string,           // What to monitor
+  entity_id: string,             // Specific entity or null for all
+  
+  // Threshold
+  condition: {
+    operator: string,            // 'greater_than' | 'less_than' | 'equals'
+    value: number,
+    time_window: string          // '5m' | '1h' | '24h' | '7d'
+  },
+  
+  // Actions
+  notification_channels: [
+    {
+      type: string,              // 'email' | 'in_app' | 'webhook'
+      config: object
+    }
+  ],
+  
+  // Notifications sent
+  last_triggered: timestamp,
+  trigger_count: number,
+  notifications_sent: [
+    {
+      timestamp: timestamp,
+      channel: string,
+      recipients: string[],
+      success: boolean
+    }
+  ],
+  
+  // Cooldown to prevent spam
+  cooldown_minutes: number,
+  
+  created_by: string,
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `org_id`, `status`, `metric`
+- Sort: `-last_triggered`
+
+---
+
+### 15. DashboardWidget
+
+**Purpose**: Customizable dashboard widgets for users.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  updated_date: timestamp,
+  
+  // Required fields
+  org_id: string,                // Foreign key to Organization
+  user_email: string,            // Widget owner
+  widget_type: string,           // 'query_volume' | 'agent_performance' | 'user_activity' | 'custom'
+  title: string,
+  
+  // Configuration
+  config: {
+    time_range: string,          // '7d' | '30d' | '90d'
+    chart_type: string,          // 'line' | 'bar' | 'pie' | 'area'
+    filters: object,
+    aggregation: string
+  },
+  
+  // Layout
+  position: {
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  },
+  
+  // Drill-down configuration
+  drill_down_enabled: boolean,
+  drill_down_config: object,
+  
+  is_visible: boolean,
+  
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `org_id`, `user_email`
+- Sort: `position.y`
+
+---
+
+### 16. ABTest
+
+**Purpose**: A/B testing for workflows and features.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  updated_date: timestamp,
+  
+  // Required fields
+  org_id: string,                // Foreign key to Organization
+  name: string,
+  description: string,
+  status: string,                // 'draft' | 'running' | 'paused' | 'completed'
+  
+  // Test configuration
+  test_type: string,             // 'workflow' | 'agent' | 'knowledge_base'
+  variants: [
+    {
+      id: string,
+      name: string,               // 'Control' | 'Variant A' | 'Variant B'
+      config: object,             // Configuration differences
+      traffic_percentage: number  // % of users assigned to variant
+    }
+  ],
+  
+  // Metrics to track
+  success_metrics: [
+    {
+      metric: string,
+      target_value: number,
+      operator: string
+    }
+  ],
+  
+  // Results
+  results: {
+    variant_id: string,
+    metrics: object,
+    sample_size: number,
+    statistical_significance: number
+  }[],
+  
+  // Duration
+  start_date: timestamp,
+  end_date: timestamp,
+  min_sample_size: number,
+  
+  // Assignment
+  user_assignments: {
+    user_email: string,
+    variant_id: string
+  }[],
+  
+  created_by: string,
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `org_id`, `status`, `test_type`
+- Sort: `-created_date`
+
+---
+
+### 17. ToolInvocation
+
+**Purpose**: Tracks tool usage by agents.
+
+```javascript
+{
+  // Auto-generated fields
+  id: string,
+  created_date: timestamp,
+  
+  // Required fields
+  org_id: string,                // Foreign key to Organization
+  agent_id: string,              // Foreign key to Agent
+  execution_id: string,          // Foreign key to AgentExecution
+  tool_id: string,               // Foreign key to AgentTool
+  
+  // Invocation details
+  input: object,
+  output: object,
+  status: string,                // 'pending' | 'running' | 'completed' | 'failed'
+  
+  // Performance
+  started_at: timestamp,
+  completed_at: timestamp,
+  duration_ms: number,
+  
+  // Error handling
+  error_message: string,
+  retry_count: number,
+  
+  metadata: object
+}
+```
+
+**Indexes**:
+- Primary: `id`
+- Secondary: `org_id`, `agent_id`, `execution_id`, `tool_id`
+- Sort: `-created_date`
+
+---
+
+**Document Version**: 2.0  
+**Last Updated**: February 5, 2026  
+**Next Review**: May 5, 2026
