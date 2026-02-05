@@ -86,6 +86,46 @@ Each step should specify what action to take.`;
       const stepStartTime = Date.now();
       
       try {
+        // Check if this step requires human approval
+        const requiresApproval = agent.requires_human_approval && 
+          agent.approval_steps?.includes(`step_${step.step_number}`);
+
+        if (requiresApproval) {
+          // Create approval request
+          const approval = await base44.entities.Approval.create({
+            org_id,
+            entity_type: 'agent_step',
+            entity_id: execution.id,
+            status: 'pending',
+            requested_by: user.email,
+            request_reason: `Agent step requires approval: ${step.description}`,
+            priority: 'high',
+            metadata: {
+              step_number: step.step_number,
+              agent_id,
+              execution_id: execution.id,
+              step_details: step
+            }
+          });
+
+          // Mark execution as awaiting approval
+          executedPlan.push({ ...step, status: 'awaiting_approval', approval_id: approval.id });
+          await base44.entities.AgentExecution.update(execution.id, {
+            plan: executedPlan,
+            status: 'awaiting_approval',
+            metadata: { pending_approval_id: approval.id }
+          });
+
+          return Response.json({
+            execution_id: execution.id,
+            status: 'awaiting_approval',
+            approval_id: approval.id,
+            message: 'Step requires human approval before proceeding',
+            step: step,
+            plan: executedPlan
+          });
+        }
+
         // Mark step as running
         executedPlan.push({ ...step, status: 'running' });
         await base44.entities.AgentExecution.update(execution.id, { plan: executedPlan });
@@ -93,22 +133,49 @@ Each step should specify what action to take.`;
         // Execute step based on action type
         let stepResult = {};
 
-        if (agent.capabilities?.includes('web_search') && step.action.includes('search')) {
-          stepResult = await base44.integrations.Core.InvokeLLM({
-            prompt: step.description,
-            add_context_from_internet: true
-          });
-        } else if (agent.capabilities?.includes('entity_crud') && step.action.includes('create')) {
-          // Would execute entity operations
-          stepResult = { message: 'Entity operation executed' };
-        } else if (agent.capabilities?.includes('api_calls')) {
-          // Would call external APIs configured in agent.api_integrations
-          stepResult = { message: 'API call executed' };
-        } else {
-          // Default: use LLM to execute
-          stepResult = await base44.integrations.Core.InvokeLLM({
-            prompt: `Execute this step: ${step.description}\nPrevious context: ${JSON.stringify(finalResult)}`
-          });
+        // Check if step involves tool invocations
+        if (agent.available_tools && agent.available_tools.length > 0) {
+          const matchingTool = agent.available_tools.find((t: any) => 
+            step.action.toLowerCase().includes(t.tool_id) ||
+            step.description.toLowerCase().includes(t.tool_id)
+          );
+
+          if (matchingTool) {
+            // Invoke tool via toolExecute function
+            const toolResponse = await fetch(`${Deno.env.get('BASE44_FUNCTIONS_URL')}/toolExecute`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tool_id: matchingTool.tool_id,
+                agent_id,
+                execution_id: execution.id,
+                input: matchingTool.config || {},
+                org_id
+              })
+            });
+            stepResult = await toolResponse.json();
+          }
+        }
+
+        // Fallback to capability-based execution
+        if (!stepResult.success) {
+          if (agent.capabilities?.includes('web_search') && step.action.includes('search')) {
+            stepResult = await base44.integrations.Core.InvokeLLM({
+              prompt: step.description,
+              add_context_from_internet: true
+            });
+          } else if (agent.capabilities?.includes('entity_crud') && step.action.includes('create')) {
+            // Would execute entity operations via tool
+            stepResult = { message: 'Entity operation executed' };
+          } else if (agent.capabilities?.includes('api_calls')) {
+            // Would call external APIs
+            stepResult = { message: 'API call executed' };
+          } else {
+            // Default: use LLM to execute
+            stepResult = await base44.integrations.Core.InvokeLLM({
+              prompt: `Execute this step: ${step.description}\nPrevious context: ${JSON.stringify(finalResult)}`
+            });
+          }
         }
 
         // Mark step as completed
