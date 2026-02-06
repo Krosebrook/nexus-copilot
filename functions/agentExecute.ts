@@ -132,28 +132,62 @@ Each step should specify what action to take.`;
 
         // Execute step based on action type
         let stepResult = {};
+        let attemptedTools = [];
 
-        // Check if step involves tool invocations
-        if (agent.available_tools && agent.available_tools.length > 0) {
-          const matchingTool = agent.available_tools.find((t: any) => 
-            step.action.toLowerCase().includes(t.tool_id) ||
-            step.description.toLowerCase().includes(t.tool_id)
-          );
+        // Autonomous tool discovery
+        const toolDiscoveryResponse = await base44.functions.invoke('toolDiscovery', {
+          org_id,
+          task_description: step.description,
+          agent_id,
+          step_context: { step_number: step.step_number, previous_results: finalResult }
+        });
 
-          if (matchingTool) {
+        const recommendedTools = toolDiscoveryResponse.data?.recommended_tools || [];
+
+        // Try tools in order of confidence
+        for (const toolRec of recommendedTools) {
+          if (!toolRec.can_execute) continue; // Skip if credentials missing
+
+          try {
+            attemptedTools.push(toolRec.tool_id);
+            
             // Invoke tool via toolExecute function
-            const toolResponse = await fetch(`${Deno.env.get('BASE44_FUNCTIONS_URL')}/toolExecute`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                tool_id: matchingTool.tool_id,
-                agent_id,
-                execution_id: execution.id,
-                input: matchingTool.config || {},
-                org_id
-              })
+            const toolResponse = await base44.functions.invoke('toolExecute', {
+              tool_id: toolRec.tool_id,
+              agent_id,
+              execution_id: execution.id,
+              input: step,
+              org_id
             });
-            stepResult = await toolResponse.json();
+
+            if (toolResponse.data?.success) {
+              stepResult = toolResponse.data;
+              break; // Success, stop trying
+            }
+          } catch (toolError) {
+            console.log(`Tool ${toolRec.tool_id} failed, trying fallback...`);
+            // Try next tool in fallback chain
+            if (toolRec.fallback_tools && toolRec.fallback_tools.length > 0) {
+              for (const fallbackId of toolRec.fallback_tools) {
+                const fallbackTool = recommendedTools.find(t => t.tool_id === fallbackId);
+                if (fallbackTool && fallbackTool.can_execute) {
+                  try {
+                    const fallbackResponse = await base44.functions.invoke('toolExecute', {
+                      tool_id: fallbackId,
+                      agent_id,
+                      execution_id: execution.id,
+                      input: step,
+                      org_id
+                    });
+                    if (fallbackResponse.data?.success) {
+                      stepResult = fallbackResponse.data;
+                      break;
+                    }
+                  } catch {}
+                }
+              }
+              if (stepResult.success) break;
+            }
           }
         }
 
