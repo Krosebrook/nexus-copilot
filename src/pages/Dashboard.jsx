@@ -16,6 +16,7 @@ import PlanBadge from '@/components/shared/PlanBadge';
 import ResponseCard from '@/components/copilot/ResponseCard';
 import CustomizableDashboard from '@/components/dashboard/CustomizableDashboard';
 import AdvancedAnalyticsPanel from '@/components/dashboard/AdvancedAnalyticsPanel';
+import ActionableInsights from '@/components/dashboard/ActionableInsights';
 
 export default function Dashboard() {
   const [currentOrg, setCurrentOrg] = useState(null);
@@ -125,6 +126,11 @@ export default function Dashboard() {
             change={-5}
             icon={Zap}
           />
+        </div>
+
+        {/* Actionable Insights */}
+        <div className="mb-8">
+          <ActionableInsights orgId={currentOrg?.id} userEmail={user?.email} />
         </div>
 
         {/* Customizable Widgets */}
