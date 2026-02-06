@@ -15,6 +15,8 @@ import AgentPersonaBuilder from '@/components/agents/AgentPersonaBuilder';
 import AgentFeedbackPanel from '@/components/agents/AgentFeedbackPanel';
 import AgentToolManager from '@/components/agents/AgentToolManager';
 import AgentLearningInsights from '@/components/agents/AgentLearningInsights';
+import ExecutionFeedbackDialog from '@/components/agents/ExecutionFeedbackDialog';
+import ExecutionPlanViewer from '@/components/agents/ExecutionPlanViewer';
 import PermissionGuard from '@/components/rbac/PermissionGuard';
 
 export default function AgentBuilder() {
@@ -25,6 +27,9 @@ export default function AgentBuilder() {
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [testTask, setTestTask] = useState('');
   const [newAgent, setNewAgent] = useState({ name: '', description: '' });
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [completedExecution, setCompletedExecution] = useState(null);
+  const [monitoringExecution, setMonitoringExecution] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -100,14 +105,27 @@ export default function AgentBuilder() {
       });
       return response.data;
     },
-    onSuccess: () => {
-      toast.success('Task completed successfully');
+    onSuccess: (result) => {
+      // If execution completed, fetch full details and show feedback
+      if (result.status === 'completed') {
+        base44.entities.AgentExecution.filter({ id: result.execution_id }).then(execs => {
+          if (execs.length > 0) {
+            setCompletedExecution(execs[0]);
+            setFeedbackDialogOpen(true);
+          }
+        });
+        toast.success('Task completed successfully');
+      } else if (result.status === 'awaiting_approval') {
+        toast.info('Task requires approval to continue');
+      }
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       setTestDialogOpen(false);
       setTestTask('');
+      setMonitoringExecution(null);
     },
     onError: (error) => {
       toast.error('Task failed: ' + error.message);
+      setMonitoringExecution(null);
     }
   });
 
@@ -116,6 +134,8 @@ export default function AgentBuilder() {
       toast.error('Please select agent and enter a task');
       return;
     }
+    // Start monitoring
+    setMonitoringExecution('starting');
     testMutation.mutate({ agent_id: selectedAgent.id, task: testTask });
   };
 
@@ -234,6 +254,33 @@ export default function AgentBuilder() {
               onClose={() => setSelectedAgent(null)}
               onUpdate={(updates) => updateMutation.mutate({ id: selectedAgent.id, updates })}
             />
+          )}
+
+          {/* Feedback Dialog */}
+          {completedExecution && (
+            <ExecutionFeedbackDialog
+              execution={completedExecution}
+              open={feedbackDialogOpen}
+              onClose={() => {
+                setFeedbackDialogOpen(false);
+                setCompletedExecution(null);
+              }}
+            />
+          )}
+
+          {/* Execution Monitoring Dialog */}
+          {monitoringExecution && testMutation.data?.execution_id && (
+            <Dialog open={!!monitoringExecution} onOpenChange={() => setMonitoringExecution(null)}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Execution Monitor</DialogTitle>
+                </DialogHeader>
+                <ExecutionPlanViewer 
+                  executionId={testMutation.data.execution_id} 
+                  showLive={true}
+                />
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </div>

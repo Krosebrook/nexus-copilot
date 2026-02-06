@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import AnalyticsChart from './AnalyticsChart';
 import WidgetLibrary from './WidgetLibrary';
+import PredictiveAnalyticsWidget from './PredictiveAnalyticsWidget';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function CustomizableDashboard({ orgId, userEmail }) {
@@ -130,14 +131,22 @@ export default function CustomizableDashboard({ orgId, userEmail }) {
                             <X className="h-3 w-3" />
                           </Button>
                         </div>
-                        <AnalyticsChart
-                          orgId={orgId}
-                          userEmail={widget.widget_type === 'user_activity' ? userEmail : null}
-                          analyticsType={widget.widget_type}
-                          timeRange={widget.config?.time_range || '7d'}
-                          chartType={widget.config?.chart_type || 'line'}
-                          title={widget.title}
-                        />
+                        {widget.widget_type.startsWith('predictive_') ? (
+                          <PredictiveAnalyticsWidget
+                            orgId={orgId}
+                            metricType={widget.widget_type.replace('predictive_', '')}
+                            title={widget.title}
+                          />
+                        ) : (
+                          <AnalyticsChart
+                            orgId={orgId}
+                            userEmail={widget.widget_type === 'user_activity' ? userEmail : null}
+                            analyticsType={widget.widget_type}
+                            timeRange={widget.config?.time_range || '7d'}
+                            chartType={widget.config?.chart_type || 'line'}
+                            title={widget.title}
+                          />
+                        )}
                       </div>
                     )}
                   </Draggable>

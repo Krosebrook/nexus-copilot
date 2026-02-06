@@ -150,6 +150,146 @@ Deno.serve(async (req) => {
   }
 });
 
+// Predictive analytics helper
+async function generatePredictiveAnalytics(base44, org_id, metric_type) {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  let historicalData = [];
+  let metricName = '';
+  let trend = 'stable';
+  let insights = [];
+
+  // Fetch historical data based on metric type
+  if (metric_type === 'workflow_success') {
+    metricName = 'Workflow Success Rate';
+    const executions = await base44.entities.WorkflowExecution.filter({ 
+      org_id,
+      created_date: { $gte: thirtyDaysAgo.toISOString() }
+    });
+
+    // Group by day
+    const dailyData = {};
+    executions.forEach(exec => {
+      const date = exec.created_date.split('T')[0];
+      if (!dailyData[date]) {
+        dailyData[date] = { total: 0, successful: 0 };
+      }
+      dailyData[date].total++;
+      if (exec.status === 'completed') dailyData[date].successful++;
+    });
+
+    historicalData = Object.entries(dailyData).map(([date, data]) => ({
+      date,
+      actual: (data.successful / data.total) * 100
+    }));
+
+  } else if (metric_type === 'knowledge_engagement') {
+    metricName = 'Knowledge Base Engagement';
+    const articles = await base44.entities.KnowledgeBase.filter({ org_id });
+    
+    // Simulate daily engagement (in production, track actual views/queries)
+    for (let i = 30; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const totalUsage = articles.reduce((sum, a) => sum + (a.usage_count || 0), 0);
+      historicalData.push({
+        date: date.toISOString().split('T')[0],
+        actual: Math.max(0, totalUsage + Math.random() * 50 - 25)
+      });
+    }
+
+  } else if (metric_type === 'agent_performance') {
+    metricName = 'Agent Success Rate';
+    const executions = await base44.entities.AgentExecution.filter({ 
+      org_id,
+      created_date: { $gte: thirtyDaysAgo.toISOString() }
+    });
+
+    const dailyData = {};
+    executions.forEach(exec => {
+      const date = exec.created_date.split('T')[0];
+      if (!dailyData[date]) {
+        dailyData[date] = { total: 0, successful: 0 };
+      }
+      dailyData[date].total++;
+      if (exec.status === 'completed') dailyData[date].successful++;
+    });
+
+    historicalData = Object.entries(dailyData).map(([date, data]) => ({
+      date,
+      actual: data.total > 0 ? (data.successful / data.total) * 100 : 0
+    }));
+  }
+
+  // Simple linear regression for prediction
+  if (historicalData.length >= 7) {
+    const values = historicalData.map(d => d.actual);
+    const n = values.length;
+    const mean = values.reduce((a, b) => a + b, 0) / n;
+    
+    // Calculate trend
+    const firstHalf = values.slice(0, Math.floor(n / 2));
+    const secondHalf = values.slice(Math.floor(n / 2));
+    const firstMean = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+    const secondMean = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+    
+    const changePercent = ((secondMean - firstMean) / firstMean) * 100;
+    
+    if (changePercent > 5) {
+      trend = 'improving';
+      insights.push(`${metricName} has increased by ${changePercent.toFixed(1)}% over the period`);
+    } else if (changePercent < -5) {
+      trend = 'declining';
+      insights.push(`${metricName} has decreased by ${Math.abs(changePercent).toFixed(1)}% over the period`);
+      insights.push('Consider reviewing recent changes or interventions');
+    } else {
+      trend = 'stable';
+      insights.push(`${metricName} has remained stable`);
+    }
+
+    // Simple prediction: next value = mean + (recent trend * 2)
+    const recentTrend = secondMean - firstMean;
+    const prediction = mean + (recentTrend * 1.5);
+    
+    // Add prediction to chart data
+    const nextDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const dataWithPrediction = [
+      ...historicalData,
+      {
+        date: nextDate.toISOString().split('T')[0],
+        predicted: Math.max(0, Math.min(100, prediction))
+      }
+    ];
+
+    // Calculate confidence based on variance
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / n;
+    const stdDev = Math.sqrt(variance);
+    const confidence = Math.max(0.5, Math.min(0.95, 1 - (stdDev / mean)));
+
+    if (confidence > 0.8) {
+      insights.push('High confidence in prediction due to consistent patterns');
+    } else if (confidence < 0.6) {
+      insights.push('Lower confidence due to high variability in data');
+    }
+
+    return {
+      metric_type,
+      metric_name: metricName,
+      historical_with_prediction: dataWithPrediction,
+      next_period_prediction: prediction,
+      trend,
+      confidence_score: confidence,
+      insights,
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  return {
+    error: 'Insufficient data for predictions',
+    message: 'Need at least 7 days of data for meaningful predictions'
+  };
+}
+
 async function predictTrend(executions, metric) {
   // Simple trend prediction based on recent data
   if (executions.length < 3) {
