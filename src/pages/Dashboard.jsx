@@ -15,6 +15,7 @@ import ActivityFeed from '@/components/shared/ActivityFeed';
 import PlanBadge from '@/components/shared/PlanBadge';
 import ResponseCard from '@/components/copilot/ResponseCard';
 import CustomizableDashboard from '@/components/dashboard/CustomizableDashboard';
+import AdvancedAnalyticsPanel from '@/components/dashboard/AdvancedAnalyticsPanel';
 
 export default function Dashboard() {
   const [currentOrg, setCurrentOrg] = useState(null);
@@ -129,6 +130,11 @@ export default function Dashboard() {
         {/* Customizable Widgets */}
         <div className="mb-8">
           <CustomizableDashboard orgId={currentOrg?.id} userEmail={user?.email} />
+        </div>
+
+        {/* Advanced Analytics */}
+        <div className="mb-8">
+          <AdvancedAnalyticsPanel orgId={currentOrg?.id} userEmail={user?.email} />
         </div>
 
         {/* Content Grid */}
