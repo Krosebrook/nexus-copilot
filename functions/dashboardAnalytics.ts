@@ -9,10 +9,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { org_id, user_email, time_range = '7d', analytics_type } = await req.json();
+    const { org_id, user_email, time_range = '7d', analytics_type, analysis_type, metric_type } = await req.json();
 
     if (!org_id) {
       return Response.json({ error: 'Missing org_id' }, { status: 400 });
+    }
+
+    // Handle predictive analytics
+    if (analysis_type === 'predictive' && metric_type) {
+      const predictiveData = await generatePredictiveAnalytics(
+        base44,
+        org_id,
+        metric_type
+      );
+      return Response.json(predictiveData);
     }
 
     const now = new Date();
