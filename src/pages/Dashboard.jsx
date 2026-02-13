@@ -17,10 +17,16 @@ import PlanBadge from '@/components/shared/PlanBadge';
 import ResponseCard from '@/components/copilot/ResponseCard';
 import UnifiedAnalytics from '@/components/dashboard/UnifiedAnalytics';
 import AlertHero from '@/components/dashboard/AlertHero';
+import RoleBasedDashboard from '@/components/dashboard/RoleBasedDashboard';
+import GettingStartedChecklist from '@/components/onboarding/GettingStartedChecklist';
+import FeatureTour from '@/components/onboarding/FeatureTour';
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const [currentOrg, setCurrentOrg] = useState(null);
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [showTour, setShowTour] = useState(false);
 
   // Get current user and org
   useEffect(() => {
