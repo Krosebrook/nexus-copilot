@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { 
   Copy, Check, Bookmark, BookmarkCheck, Share2, 
-  MoreHorizontal, Clock, Zap, ChevronDown, ChevronUp 
+  MoreHorizontal, Clock, Zap, ChevronDown, ChevronUp, AlertTriangle,
+  ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,11 @@ export default function ResponseCard({
 
   const typeConfig = TYPE_LABELS[query.response_type] || TYPE_LABELS.answer;
 
+  // Determine urgency
+  const isUrgent = query.response_type === 'action' || 
+                   query.response?.toLowerCase().includes('critical') ||
+                   query.response?.toLowerCase().includes('urgent');
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(query.response || '');
     setCopied(true);
@@ -51,9 +57,20 @@ export default function ResponseCard({
 
   return (
     <div className={cn(
-      "group bg-white border border-slate-200 rounded-2xl transition-all duration-200",
-      "hover:border-slate-300 hover:shadow-sm"
+      "group bg-white border-0 rounded-2xl transition-all duration-100 shadow-sm",
+      "hover:shadow-md",
+      isUrgent && "border-l-4 border-l-red-600 shadow-lg"
     )}>
+      {/* Urgent Badge */}
+      {isUrgent && (
+        <div className="flex items-center gap-2 px-4 pt-3">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">
+            Action Required
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start gap-3 p-4 pb-0">
         <div className="flex-1 min-w-0">
@@ -193,12 +210,59 @@ export default function ResponseCard({
         </div>
       )}
 
-      {/* Feedback */}
-      {query.status === 'completed' && onFeedback && (
-        <div className="px-4 pb-4 pt-2 border-t border-slate-100">
-          <FeedbackWidget query={query} onSubmit={(feedback) => onFeedback(query, feedback)} />
+      {/* Inline Actions */}
+      <div className="px-4 pb-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs"
+            onClick={handleCopy}
+          >
+            {copied ? <Check className="h-3 w-3 mr-1 text-green-600" /> : <Copy className="h-3 w-3 mr-1" />}
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs"
+            onClick={handleSave}
+          >
+            {query.is_saved ? (
+              <><BookmarkCheck className="h-3 w-3 mr-1 text-amber-600" />Saved</>
+            ) : (
+              <><Bookmark className="h-3 w-3 mr-1" />Save</>
+            )}
+          </Button>
         </div>
-      )}
+        
+        {query.status === 'completed' && onFeedback && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                onFeedback(query, { rating: 5, feedback_type: 'helpful', sentiment: 'positive' });
+                toast.success('Thanks for your feedback!');
+              }}
+            >
+              <ThumbsUp className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                onFeedback(query, { rating: 2, feedback_type: 'incorrect', sentiment: 'negative' });
+                toast.success('Feedback recorded');
+              }}
+            >
+              <ThumbsDown className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
