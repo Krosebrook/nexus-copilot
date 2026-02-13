@@ -57,9 +57,9 @@ export default function ResponseCard({
 
   return (
     <div className={cn(
-      "group bg-white border-0 rounded-2xl transition-all duration-100 shadow-sm",
+      "group bg-white border-0 rounded-2xl transition-all duration-200 shadow-sm",
       "hover:shadow-md",
-      isUrgent && "border-l-4 border-l-red-600 shadow-lg"
+      isUrgent && "border-l-4 border-l-red-600 shadow-xl"
     )}>
       {/* Urgent Badge */}
       {isUrgent && (
@@ -74,7 +74,7 @@ export default function ResponseCard({
       {/* Header */}
       <div className="flex items-start gap-3 p-4 pb-0">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-900 leading-snug line-clamp-2">
+          <p className="text-sm font-medium text-slate-700 leading-snug line-clamp-2">
             {query.prompt}
           </p>
           <div className="flex items-center gap-2 mt-2">

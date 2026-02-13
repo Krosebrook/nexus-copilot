@@ -78,8 +78,8 @@ export default function CommandInput({
 
       <form onSubmit={handleSubmit} className="relative">
         <div className={cn(
-          "flex items-center gap-3 bg-white border-2 rounded-2xl px-4 py-3 transition-all duration-200",
-          isProcessing ? "border-slate-200 bg-slate-50" : "border-slate-200 hover:border-slate-300 focus-within:border-slate-900 focus-within:shadow-sm"
+          "flex items-center gap-3 bg-white border-0 rounded-2xl px-4 py-3 transition-all duration-300 shadow-lg",
+          isProcessing ? "bg-slate-50" : "hover:shadow-xl focus-within:shadow-xl"
         )}>
           <Command className="h-4 w-4 text-slate-400 flex-shrink-0" />
           
@@ -108,7 +108,7 @@ export default function CommandInput({
               size="sm"
               disabled={!input.trim() || isProcessing || disabled}
               className={cn(
-                "h-8 w-8 p-0 rounded-xl transition-all",
+                "h-8 w-8 p-0 rounded-xl transition-all duration-200 shadow-sm",
                 input.trim() && !isProcessing 
                   ? "bg-slate-900 hover:bg-slate-800 text-white" 
                   : "bg-slate-100 text-slate-400"
