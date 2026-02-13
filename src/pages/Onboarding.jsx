@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
-import StepIndicator from '@/components/onboarding/StepIndicator';
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 import CreateOrgStep from '@/components/onboarding/CreateOrgStep';
 import InviteMembersStep from '@/components/onboarding/InviteMembersStep';
 import ConnectIntegrationsStep from '@/components/onboarding/ConnectIntegrationsStep';
@@ -147,38 +146,37 @@ export default function Onboarding() {
     navigate(createPageUrl('Dashboard'));
   };
 
-  const StepComponent = STEPS[currentStep].component;
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const wizardSteps = STEPS.map((step, idx) => ({
+    title: step.title,
+    component: isProcessing && currentStep === idx ? (
+      <div className="text-center py-12">
+        <div className="animate-spin h-10 w-10 border-4 border-slate-900 border-t-transparent rounded-full mx-auto mb-4" />
+        <p className="text-slate-600">Setting up your workspace...</p>
+      </div>
+    ) : (
+      React.createElement(step.component, {
+        onNext: handleNext,
+        onSkip: handleSkip,
+        onComplete: handleComplete,
+        initialData: onboardingData,
+        orgName: onboardingData.orgName,
+      })
+    )
+  }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-8">
-          <div className="h-12 w-12 rounded-xl bg-slate-900 flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome to AI Copilot</h1>
-          <p className="text-slate-600">Let's get you set up in just a few steps</p>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200">
-          <StepIndicator steps={STEPS} currentStep={currentStep} />
-          
-          {isProcessing ? (
-            <div className="text-center py-12">
-              <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-              <p className="text-slate-600">Setting up your workspace...</p>
-            </div>
-          ) : (
-            <StepComponent
-              onNext={handleNext}
-              onSkip={handleSkip}
-              onComplete={handleComplete}
-              initialData={onboardingData}
-              orgName={onboardingData.orgName}
-            />
-          )}
-        </div>
-      </div>
-    </div>
+    <OnboardingWizard
+      steps={wizardSteps}
+      currentStep={currentStep}
+      onStepComplete={() => {}}
+      onBack={handleBack}
+      onFinish={handleComplete}
+    />
   );
 }
