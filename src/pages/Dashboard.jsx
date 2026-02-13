@@ -34,7 +34,16 @@ export default function Dashboard() {
         });
         if (memberships.length > 0) {
           const orgs = await base44.entities.Organization.filter({ id: memberships[0].org_id });
-          if (orgs.length > 0) setCurrentOrg(orgs[0]);
+          if (orgs.length > 0) {
+            setCurrentOrg(orgs[0]);
+            setUserRole(memberships[0].role);
+            
+            // Show tour for new users
+            const tourCompleted = localStorage.getItem('feature_tour_completed');
+            if (!tourCompleted) {
+              setTimeout(() => setShowTour(true), 1000);
+            }
+          }
         } else {
           // No organization - redirect to onboarding
           window.location.href = createPageUrl('Onboarding');
@@ -109,60 +118,30 @@ export default function Dashboard() {
           </Link>
         </div>
 
+        {/* Getting Started Checklist */}
+        {currentOrg && user && (
+          <div className="mb-12">
+            <GettingStartedChecklist orgId={currentOrg.id} userEmail={user.email} />
+          </div>
+        )}
+
         {/* Alert Hero */}
         <div className="mb-12">
           <AlertHero orgId={currentOrg?.id} />
         </div>
 
-        {/* Recent Activity */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-slate-700">Recent Activity</h2>
-            <Link 
-              to={createPageUrl('Copilot')}
-              className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 transition-colors duration-200"
-            >
-              View all <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          
-          {queries.length === 0 ? (
-            <Card className="p-12 text-center border-0 shadow-sm">
-              <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
-                <AIGlyph size="xl" className="text-slate-400" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-700 mb-2">Ask your AI Copilot</h3>
-              <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-                Get instant answers, summaries, and insights from your knowledge base and integrations
-              </p>
-              <Link to={createPageUrl('Copilot')}>
-                <Button size="lg" className="bg-slate-900 hover:bg-slate-800 shadow-sm gap-2">
-                  <AIGlyph size="sm" className="text-white" />
-                  Start conversation
-                </Button>
-              </Link>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {queries.slice(0, 3).map((query) => (
-                <ResponseCard key={query.id} query={query} compact />
-              ))}
-              {queries.length > 3 && (
-                <Link to={createPageUrl('Copilot')}>
-                  <Button variant="outline" className="w-full shadow-sm">
-                    Show {queries.length - 3} more responses
-                  </Button>
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Unified Analytics */}
-        <div className="mb-12">
-          <UnifiedAnalytics orgId={currentOrg?.id} userEmail={user?.email} />
-        </div>
+        {/* Role-Based Dashboard */}
+        <RoleBasedDashboard 
+          role={userRole} 
+          orgId={currentOrg?.id} 
+          userEmail={user?.email}
+          queries={queries}
+          members={members}
+        />
       </div>
+
+      {/* Feature Tour */}
+      {showTour && <FeatureTour onComplete={() => setShowTour(false)} />}
     </div>
   );
 }

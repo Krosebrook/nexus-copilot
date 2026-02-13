@@ -137,10 +137,11 @@ export default function Layout({ children, currentPageName }) {
                         ? "bg-slate-100 text-slate-900 shadow-sm" 
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                     )}
-                  >
+                    data-tour={item.name === 'Copilot' ? 'copilot-button' : undefined}
+                    >
                     <item.icon className="h-4 w-4" />
                     {item.name}
-                  </Link>
+                    </Link>
                 );
               })}
 
@@ -155,6 +156,7 @@ export default function Layout({ children, currentPageName }) {
                         ? "bg-slate-100 text-slate-900 shadow-sm"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                     )}
+                    data-tour="workspace-menu"
                   >
                     <Menu className="h-4 w-4" />
                     Workspace
@@ -191,6 +193,7 @@ export default function Layout({ children, currentPageName }) {
               size="sm"
               onClick={() => setSearchOpen(true)}
               className="hidden sm:flex items-center gap-2 text-slate-500 hover:text-slate-700"
+              data-tour="search-button"
             >
               <Search className="h-4 w-4" />
               <span className="text-sm">Search</span>
