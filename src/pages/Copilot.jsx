@@ -16,7 +16,7 @@ import SuggestedArticles from '@/components/copilot/SuggestedArticles';
 export default function Copilot() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedQuery, setSelectedQuery] = useState(null);
-  const [showHistory, setShowHistory] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const [historyFilter, setHistoryFilter] = useState('all');
   const [historySearch, setHistorySearch] = useState('');
   const [currentOrg, setCurrentOrg] = useState(null);
@@ -199,6 +199,9 @@ export default function Copilot() {
         ? ' Include technical details and explanations.'
         : ' Use clear, professional language.';
       
+      // Update processing status
+      setIsProcessing(true);
+
       // Get AI response with all context
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a helpful AI copilot for a team. Provide clear, concise answers. Be direct and actionable.${lengthInstruction}${verbosityInstruction}${integrationContext}${knowledgeContext}${conversationContext}
@@ -325,75 +328,106 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
   }, []);
 
   return (
-    <div className="h-screen flex bg-slate-50">
-      {/* History Sidebar */}
+    <div className="h-screen flex bg-white">
+      {/* History Sidebar Overlay */}
       <AnimatePresence mode="wait">
         {showHistory && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="border-r border-slate-200 flex-shrink-0 overflow-hidden"
-          >
-            <QueryHistory
-              queries={queries}
-              onSelect={setSelectedQuery}
-              selectedId={selectedQuery?.id}
-              filter={historyFilter}
-              onFilterChange={setHistoryFilter}
-              searchQuery={historySearch}
-              onSearchChange={setHistorySearch}
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-slate-900/20 z-40"
+              onClick={() => setShowHistory(false)}
             />
-          </motion.div>
+            <motion.div
+              initial={{ x: -320, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -320, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed left-0 top-0 bottom-0 w-80 bg-white border-r border-slate-200 z-50 shadow-xl"
+            >
+              <QueryHistory
+                queries={queries}
+                onSelect={(q) => {
+                  setSelectedQuery(q);
+                  setShowHistory(false);
+                }}
+                selectedId={selectedQuery?.id}
+                filter={historyFilter}
+                onFilterChange={setHistoryFilter}
+                searchQuery={historySearch}
+                onSearchChange={setHistorySearch}
+              />
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-              className="h-8 w-8 p-0"
-            >
-              {showHistory ? (
-                <PanelLeftClose className="h-4 w-4" />
-              ) : (
-                <PanelLeft className="h-4 w-4" />
+        {/* Input-First Header */}
+        <header className="border-b border-slate-200 bg-white px-6 py-6">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="h-8 w-8 p-0"
+                >
+                  <PanelLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-sm font-semibold text-slate-900">Copilot</h1>
+                    {currentOrg && (
+                      <p className="text-xs text-slate-500">{currentOrg.name}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {queries.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowHistory(true)}
+                  className="text-xs text-slate-500"
+                >
+                  {queries.length} {queries.length === 1 ? 'query' : 'queries'}
+                </Button>
               )}
-            </Button>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <h1 className="text-sm font-semibold text-slate-900">Copilot</h1>
-                {currentOrg && (
-                  <p className="text-xs text-slate-500">{currentOrg.name}</p>
-                )}
-              </div>
             </div>
+
+            {/* Hero Command Input */}
+            <CommandInput
+              onSubmit={handleSubmit}
+              isProcessing={isProcessing}
+              placeholder="Ask anything..."
+              disabled={!currentOrg}
+            />
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto">
-          <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="flex-1 overflow-auto bg-slate-50">
+          <div className="max-w-3xl mx-auto px-6 py-6">
             {queries.length === 0 && !isProcessing ? (
               <EmptyState onSuggestionClick={handleSuggestionClick} />
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <AnimatePresence mode="popLayout">
                   {isProcessing && (
                     <motion.div
                       key="processing"
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
+                      exit={{ opacity: 0, y: -10 }}
                     >
                       <ProcessingIndicator message="Analyzing your question..." />
                     </motion.div>
@@ -402,9 +436,9 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                   {selectedQuery ? (
                     <motion.div
                       key={selectedQuery.id}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="space-y-4"
+                      className="space-y-3"
                     >
                       <ResponseCard
                         query={selectedQuery}
@@ -422,7 +456,7 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                     queries.slice(0, 5).map((query) => (
                       <motion.div
                         key={query.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         layout
                       >
@@ -438,18 +472,6 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                 </AnimatePresence>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Command Input */}
-        <div className="border-t border-slate-200 bg-white px-6 py-4">
-          <div className="max-w-3xl mx-auto">
-            <CommandInput
-              onSubmit={handleSubmit}
-              isProcessing={isProcessing}
-              placeholder="Ask anything..."
-              disabled={!currentOrg}
-            />
           </div>
         </div>
       </div>
