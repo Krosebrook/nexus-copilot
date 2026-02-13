@@ -35,9 +35,15 @@ export default function Dashboard() {
         if (memberships.length > 0) {
           const orgs = await base44.entities.Organization.filter({ id: memberships[0].org_id });
           if (orgs.length > 0) setCurrentOrg(orgs[0]);
+        } else {
+          // No organization - redirect to onboarding
+          window.location.href = createPageUrl('Onboarding');
         }
       } catch (e) {
         console.error(e);
+        toast.error('Failed to load workspace', {
+          description: 'Please try refreshing the page'
+        });
       }
     };
     fetchData();

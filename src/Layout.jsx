@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import GlobalSearch from '@/components/shared/GlobalSearch';
+import HelpButton from '@/components/shared/HelpButton';
 
 const PRIMARY_NAV = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
@@ -183,7 +184,7 @@ export default function Layout({ children, currentPageName }) {
             </nav>
           </div>
 
-          {/* Right: Search & User */}
+          {/* Right: Search, Help & User */}
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -194,6 +195,8 @@ export default function Layout({ children, currentPageName }) {
               <Search className="h-4 w-4" />
               <span className="text-sm">Search</span>
             </Button>
+
+            <HelpButton />
 
             {user && (
               <DropdownMenu>

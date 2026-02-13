@@ -94,11 +94,17 @@ export default function Settings() {
       });
     },
     onSuccess: () => {
-      toast.success('Settings saved');
+      toast.success('Settings saved', {
+        description: 'Workspace settings updated',
+        duration: 2000
+      });
       queryClient.invalidateQueries({ queryKey: ['org'] });
     },
-    onError: () => {
-      toast.error('Failed to save settings');
+    onError: (error) => {
+      toast.error('Failed to save', {
+        description: error.message || 'Please try again',
+        duration: 3000
+      });
     },
   });
 
@@ -109,7 +115,10 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['members'] });
-      toast.success('Role updated successfully');
+      toast.success('Role updated', {
+        description: 'Member permissions have been changed',
+        duration: 2000
+      });
       setChangeRoleDialogOpen(false);
       setSelectedMemberForRole(null);
     },
@@ -157,12 +166,18 @@ export default function Settings() {
       }
     },
     onSuccess: () => {
-      toast.success('Invitation sent');
+      toast.success('Invitation sent', {
+        description: 'The user will receive an email to join',
+        duration: 3000
+      });
       setInviteDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ['members'] });
     },
-    onError: () => {
-      toast.error('Failed to send invitation');
+    onError: (error) => {
+      toast.error('Failed to send invitation', {
+        description: error.message || 'Please check the email and try again',
+        duration: 4000
+      });
     },
   });
 

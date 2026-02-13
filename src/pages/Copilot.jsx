@@ -301,12 +301,23 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
 
   const handleSubmit = async (prompt) => {
     if (!currentOrg) {
-      toast.error('Please set up your organization first');
+      toast.error('Organization not found', {
+        description: 'Please complete setup first',
+        action: {
+          label: 'Setup',
+          onClick: () => window.location.href = createPageUrl('Onboarding')
+        }
+      });
       return;
     }
     setIsProcessing(true);
     try {
       await createQueryMutation.mutateAsync(prompt);
+    } catch (error) {
+      toast.error('Failed to process query', {
+        description: error.message || 'Please try again',
+        duration: 4000
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -316,17 +327,30 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
     handleSubmit(text);
   };
 
-  // Keyboard shortcut for history toggle
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Toggle history sidebar
       if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
         e.preventDefault();
         setShowHistory(prev => !prev);
       }
+      
+      // Open Copilot from anywhere
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        window.location.href = createPageUrl('Copilot');
+      }
+
+      // Save current query
+      if ((e.metaKey || e.ctrlKey) && e.key === 's' && selectedQuery) {
+        e.preventDefault();
+        toggleSaveMutation.mutate(selectedQuery);
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [selectedQuery]);
 
   return (
     <div className="h-screen flex bg-white">

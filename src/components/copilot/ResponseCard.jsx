@@ -229,8 +229,12 @@ export default function ResponseCard({
             onClick={() => {
               handleSave();
               if (!query.is_saved) {
-                toast.success('Saved for later', { 
-                  description: 'Find it in your history',
+                toast.success('Saved', { 
+                  description: 'Added to your saved queries',
+                  duration: 2000 
+                });
+              } else {
+                toast('Removed from saved', { 
                   duration: 2000 
                 });
               }

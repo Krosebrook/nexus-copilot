@@ -81,13 +81,16 @@ export default function CopilotSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['preferences'] });
-      toast.success('Preferences saved', {
-        description: 'Your changes have been applied',
+      toast.success('Saved', {
+        description: 'Preferences updated successfully',
         duration: 2000
       });
     },
-    onError: () => {
-      toast.error('Failed to save preferences');
+    onError: (error) => {
+      toast.error('Failed to save', {
+        description: error.message || 'Please try again',
+        duration: 3000
+      });
     },
   });
 
