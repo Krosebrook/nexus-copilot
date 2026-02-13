@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { PanelLeftClose, PanelLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ import ProcessingIndicator from '@/components/copilot/ProcessingIndicator';
 import EmptyState from '@/components/copilot/EmptyState';
 import QueryHistory from '@/components/copilot/QueryHistory';
 import SuggestedArticles from '@/components/copilot/SuggestedArticles';
+import AIGlyph from '@/components/shared/AIGlyph';
 
 export default function Copilot() {
   const [isProcessing, setIsProcessing] = useState(false);
