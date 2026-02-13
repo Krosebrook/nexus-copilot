@@ -21,9 +21,12 @@ import { cn } from "@/lib/utils";
 
 import GlobalSearch from '@/components/shared/GlobalSearch';
 
-const NAV_ITEMS = [
+const PRIMARY_NAV = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
   { name: 'Copilot', href: 'Copilot', icon: Sparkles },
+];
+
+const WORKSPACE_NAV = [
   { name: 'Knowledge', href: 'Knowledge', icon: Book },
   { name: 'Workflows', href: 'WorkflowBuilder', icon: Activity },
   { name: 'Agents', href: 'AgentBuilder', icon: Workflow },
@@ -120,7 +123,7 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Desktop Nav */}
             <nav className="hidden lg:flex items-center gap-1">
-              {NAV_ITEMS.map((item) => {
+              {PRIMARY_NAV.map((item) => {
                 const isActive = currentPageName === item.href;
                 return (
                   <Link
@@ -138,6 +141,44 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
+                      WORKSPACE_NAV.some(item => currentPageName === item.href)
+                        ? "bg-slate-100 text-slate-900"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    )}
+                  >
+                    <Menu className="h-4 w-4" />
+                    Workspace
+                    <ChevronDown className="h-3 w-3 ml-auto" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  {WORKSPACE_NAV.map((item) => {
+                    const isActive = currentPageName === item.href;
+                    return (
+                      <DropdownMenuItem key={item.name} asChild>
+                        <Link
+                          to={createPageUrl(item.href)}
+                          className={cn(
+                            "flex items-center gap-2 cursor-pointer",
+                            isActive && "bg-slate-100"
+                          )}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          {item.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
           </div>
 
@@ -151,9 +192,6 @@ export default function Layout({ children, currentPageName }) {
             >
               <Search className="h-4 w-4" />
               <span className="text-sm">Search</span>
-              <kbd className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-slate-100 text-slate-500 rounded">
-                ⌘K
-              </kbd>
             </Button>
 
             {user && (
@@ -201,11 +239,50 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
 
-        {/* Mobile Nav */}
+        {/* Mobile Nav - Contextual */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-slate-200 bg-white py-2 px-4">
+            {/* Quick Actions for current page */}
+            {currentPageName === 'Dashboard' && (
+              <div className="mb-3">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide px-3 mb-2">
+                  Quick Actions
+                </p>
+                <Link
+                  to={createPageUrl('Copilot')}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Open Copilot
+                </Link>
+              </div>
+            )}
+
+            {currentPageName === 'Copilot' && (
+              <div className="mb-3">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide px-3 mb-2">
+                  Quick Actions
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                >
+                  <Search className="h-4 w-4" />
+                  Search knowledge
+                </button>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide px-3 mb-2">
+              Navigate
+            </p>
             <nav className="space-y-1">
-              {NAV_ITEMS.map((item) => {
+              {PRIMARY_NAV.map((item) => {
                 const isActive = currentPageName === item.href;
                 return (
                   <Link
@@ -224,6 +301,31 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+
+              <div className="pt-2 mt-2 border-t border-slate-100">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide px-3 mb-2">
+                  Workspace
+                </p>
+                {WORKSPACE_NAV.map((item) => {
+                  const isActive = currentPageName === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={createPageUrl(item.href)}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                        isActive 
+                          ? "bg-slate-100 text-slate-900" 
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
             </nav>
           </div>
         )}
