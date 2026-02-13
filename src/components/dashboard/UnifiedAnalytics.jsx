@@ -7,27 +7,27 @@ import { BarChart3, TrendingUp, Activity } from 'lucide-react';
 
 export default function UnifiedAnalytics({ orgId, userEmail }) {
   return (
-    <Card className="border-0 shadow-sm">
+    <Card className="border-0 shadow-lg">
       <Tabs defaultValue="analytics" className="w-full">
-        <div className="border-b border-slate-200 px-6 pt-4">
-          <TabsList className="bg-transparent h-auto p-0 border-0">
+        <div className="border-b border-slate-200 px-6 pt-6">
+          <TabsList className="bg-transparent h-auto p-0 border-0 gap-1">
             <TabsTrigger 
               value="analytics" 
-              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-slate-900 rounded-none px-4 py-3"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-slate-900 rounded-none px-4 py-3 transition-all duration-200"
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Analytics
             </TabsTrigger>
             <TabsTrigger 
               value="trends"
-              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-slate-900 rounded-none px-4 py-3"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-slate-900 rounded-none px-4 py-3 transition-all duration-200"
             >
               <TrendingUp className="h-4 w-4 mr-2" />
               Trends
             </TabsTrigger>
             <TabsTrigger 
               value="system"
-              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-slate-900 rounded-none px-4 py-3"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-slate-900 rounded-none px-4 py-3 transition-all duration-200"
             >
               <Activity className="h-4 w-4 mr-2" />
               System Health

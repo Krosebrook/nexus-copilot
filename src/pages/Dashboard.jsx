@@ -77,12 +77,12 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex items-start justify-between mb-12">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-semibold text-slate-900">
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-bold text-slate-700">
                 Welcome back{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}
               </h1>
               {currentOrg && <PlanBadge plan={currentOrg.plan} />}
@@ -92,7 +92,7 @@ export default function Dashboard() {
             </p>
           </div>
           <Link to={createPageUrl('Copilot')}>
-            <Button className="bg-slate-900 hover:bg-slate-800">
+            <Button className="bg-slate-900 hover:bg-slate-800 shadow-sm">
               <Sparkles className="h-4 w-4 mr-2" />
               Open Copilot
             </Button>
@@ -107,10 +107,10 @@ export default function Dashboard() {
         {/* Recent Activity */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+            <h2 className="text-lg font-bold text-slate-700">Recent Activity</h2>
             <Link 
               to={createPageUrl('Copilot')}
-              className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
+              className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 transition-colors duration-200"
             >
               View all <ArrowRight className="h-3 w-3" />
             </Link>
@@ -121,7 +121,7 @@ export default function Dashboard() {
               <MessageSquare className="h-12 w-12 text-slate-300 mx-auto mb-3" />
               <p className="text-slate-500 mb-6">No queries yet</p>
               <Link to={createPageUrl('Copilot')}>
-                <Button size="lg" className="bg-slate-900 hover:bg-slate-800">
+                <Button size="lg" className="bg-slate-900 hover:bg-slate-800 shadow-sm">
                   <Sparkles className="h-4 w-4 mr-2" />
                   Ask your first question
                 </Button>
@@ -134,7 +134,7 @@ export default function Dashboard() {
               ))}
               {queries.length > 3 && (
                 <Link to={createPageUrl('Copilot')}>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full shadow-sm">
                     Show {queries.length - 3} more responses
                   </Button>
                 </Link>

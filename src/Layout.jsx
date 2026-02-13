@@ -108,15 +108,15 @@ export default function Layout({ children, currentPageName }) {
     <ErrorBoundary>
       <div className="min-h-screen bg-slate-50">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
+      <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
         <div className="flex items-center justify-between px-4 lg:px-6 h-14">
           {/* Left: Logo & Nav */}
           <div className="flex items-center gap-6">
-            <Link to={createPageUrl('Dashboard')} className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
+            <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center shadow-sm">
                 <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <span className="font-semibold text-slate-900 hidden sm:block">
+              <span className="font-bold text-slate-700 hidden sm:block">
                 {currentOrg?.name || 'AI Copilot'}
               </span>
             </Link>
@@ -130,9 +130,9 @@ export default function Layout({ children, currentPageName }) {
                     key={item.name}
                     to={createPageUrl(item.href)}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                       isActive 
-                        ? "bg-slate-100 text-slate-900" 
+                        ? "bg-slate-100 text-slate-900 shadow-sm" 
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
@@ -148,9 +148,9 @@ export default function Layout({ children, currentPageName }) {
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                       WORKSPACE_NAV.some(item => currentPageName === item.href)
-                        ? "bg-slate-100 text-slate-900"
+                        ? "bg-slate-100 text-slate-900 shadow-sm"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                     )}
                   >
