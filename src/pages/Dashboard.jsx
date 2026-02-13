@@ -14,9 +14,8 @@ import StatsCard from '@/components/admin/StatsCard';
 import ActivityFeed from '@/components/shared/ActivityFeed';
 import PlanBadge from '@/components/shared/PlanBadge';
 import ResponseCard from '@/components/copilot/ResponseCard';
-import CustomizableDashboard from '@/components/dashboard/CustomizableDashboard';
-import AdvancedAnalyticsPanel from '@/components/dashboard/AdvancedAnalyticsPanel';
-import ActionableInsights from '@/components/dashboard/ActionableInsights';
+import UnifiedAnalytics from '@/components/dashboard/UnifiedAnalytics';
+import AlertHero from '@/components/dashboard/AlertHero';
 
 export default function Dashboard() {
   const [currentOrg, setCurrentOrg] = useState(null);
@@ -100,112 +99,53 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatsCard
-            title="Total Queries"
-            value={queries.length}
-            change={12}
-            changeLabel="vs last week"
-            icon={MessageSquare}
-          />
-          <StatsCard
-            title="This Week"
-            value={thisWeekQueries.length}
-            change={8}
-            icon={TrendingUp}
-          />
-          <StatsCard
-            title="Team Members"
-            value={members.length}
-            icon={Users}
-          />
-          <StatsCard
-            title="Avg Response Time"
-            value={`${avgLatency}ms`}
-            change={-5}
-            icon={Zap}
-          />
+        {/* Alert Hero */}
+        <div className="mb-12">
+          <AlertHero orgId={currentOrg?.id} />
         </div>
 
-        {/* Actionable Insights */}
-        <div className="mb-8">
-          <ActionableInsights orgId={currentOrg?.id} userEmail={user?.email} />
-        </div>
-
-        {/* Customizable Widgets */}
-        <div className="mb-8">
-          <CustomizableDashboard orgId={currentOrg?.id} userEmail={user?.email} />
-        </div>
-
-        {/* Advanced Analytics */}
-        <div className="mb-8">
-          <AdvancedAnalyticsPanel orgId={currentOrg?.id} userEmail={user?.email} />
-        </div>
-
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Queries */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Recent Queries</h2>
-              <Link 
-                to={createPageUrl('Copilot')}
-                className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
-              >
-                View all <ArrowRight className="h-3 w-3" />
+        {/* Recent Activity */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+            <Link 
+              to={createPageUrl('Copilot')}
+              className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
+            >
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          
+          {queries.length === 0 ? (
+            <Card className="p-12 text-center border-0 shadow-sm">
+              <MessageSquare className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500 mb-6">No queries yet</p>
+              <Link to={createPageUrl('Copilot')}>
+                <Button size="lg" className="bg-slate-900 hover:bg-slate-800">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Ask your first question
+                </Button>
               </Link>
-            </div>
-            
-            {queries.length === 0 ? (
-              <Card className="p-8 text-center">
-                <MessageSquare className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 mb-4">No queries yet</p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {queries.slice(0, 3).map((query) => (
+                <ResponseCard key={query.id} query={query} compact />
+              ))}
+              {queries.length > 3 && (
                 <Link to={createPageUrl('Copilot')}>
-                  <Button>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Ask your first question
+                  <Button variant="outline" className="w-full">
+                    Show {queries.length - 3} more responses
                   </Button>
                 </Link>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {queries.slice(0, 3).map((query) => (
-                  <ResponseCard key={query.id} query={query} compact />
-                ))}
-              </div>
-            )}
+              )}
+            </div>
+          )}
+        </div>
 
-            {/* Saved Queries */}
-            {savedQueries.length > 0 && (
-              <div className="mt-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <Bookmark className="h-4 w-4 text-amber-500" />
-                  <h2 className="text-lg font-semibold text-slate-900">Saved</h2>
-                </div>
-                <div className="space-y-3">
-                  {savedQueries.slice(0, 2).map((query) => (
-                    <ResponseCard key={query.id} query={query} compact />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Activity Feed */}
-          <div>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-slate-400" />
-                  Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ActivityFeed activities={auditLogs} compact />
-              </CardContent>
-            </Card>
-          </div>
+        {/* Unified Analytics */}
+        <div className="mb-12">
+          <UnifiedAnalytics orgId={currentOrg?.id} userEmail={user?.email} />
         </div>
       </div>
     </div>
