@@ -3,10 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { 
-  Sparkles, LayoutDashboard, Settings, Activity, 
+  LayoutDashboard, Settings, Activity, 
   CheckCircle, Book, Search, LogOut, ChevronDown,
   Menu, X, Workflow
 } from 'lucide-react';
+import AIGlyph from '@/components/shared/AIGlyph';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
@@ -23,7 +24,7 @@ import GlobalSearch from '@/components/shared/GlobalSearch';
 
 const PRIMARY_NAV = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
-  { name: 'Copilot', href: 'Copilot', icon: Sparkles },
+  { name: 'Copilot', href: 'Copilot', icon: AIGlyph },
 ];
 
 const WORKSPACE_NAV = [
@@ -114,7 +115,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex items-center gap-6">
             <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center shadow-sm">
-                <Sparkles className="h-4 w-4 text-white" />
+                <AIGlyph size="sm" className="text-white" />
               </div>
               <span className="font-bold text-slate-700 hidden sm:block">
                 {currentOrg?.name || 'AI Copilot'}
@@ -253,8 +254,9 @@ export default function Layout({ children, currentPageName }) {
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <AIGlyph size="sm" />
                   Open Copilot
+                  <kbd className="ml-auto px-1.5 py-0.5 text-xs bg-slate-100 text-slate-500 rounded">⌘/</kbd>
                 </Link>
               </div>
             )}
@@ -273,6 +275,7 @@ export default function Layout({ children, currentPageName }) {
                 >
                   <Search className="h-4 w-4" />
                   Search knowledge
+                  <kbd className="ml-auto px-1.5 py-0.5 text-xs bg-slate-100 text-slate-500 rounded">⌘K</kbd>
                 </button>
               </div>
             )}

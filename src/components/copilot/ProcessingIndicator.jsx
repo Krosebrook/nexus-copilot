@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import AIGlyph from '@/components/shared/AIGlyph';
 
 export default function ProcessingIndicator({ message = "Thinking...", stage = "analyzing" }) {
   const stageMessages = {
@@ -22,15 +22,15 @@ export default function ProcessingIndicator({ message = "Thinking...", stage = "
       <div className="relative">
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center"
+          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center shadow-sm"
         >
-          <Sparkles className="h-5 w-5 text-white" />
+          <AIGlyph size="md" className="text-white" />
         </motion.div>
         <motion.div
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="absolute inset-0 rounded-xl bg-slate-900/20 blur-sm"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute inset-0 rounded-xl bg-slate-900/20 blur-md"
         />
       </div>
       

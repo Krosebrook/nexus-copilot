@@ -226,7 +226,15 @@ export default function ResponseCard({
             variant="ghost"
             size="sm"
             className="h-8 text-xs"
-            onClick={handleSave}
+            onClick={() => {
+              handleSave();
+              if (!query.is_saved) {
+                toast.success('Saved for later', { 
+                  description: 'Find it in your history',
+                  duration: 2000 
+                });
+              }
+            }}
           >
             {query.is_saved ? (
               <><BookmarkCheck className="h-3 w-3 mr-1 text-amber-600" />Saved</>

@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { AlertTriangle, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
+import AIGlyph from '@/components/shared/AIGlyph';
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -44,7 +45,7 @@ export default function AlertHero({ orgId }) {
           </div>
           <Link to={createPageUrl('Copilot')}>
             <Button size="lg" className="bg-slate-900 hover:bg-slate-800 gap-2 shadow-sm">
-              <Sparkles className="h-4 w-4" />
+              <AIGlyph size="sm" className="text-white" />
               Ask Copilot
             </Button>
           </Link>

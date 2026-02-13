@@ -4,9 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
-  Sparkles, MessageSquare, Users, Zap, ArrowRight,
+  MessageSquare, Users, Zap, ArrowRight,
   TrendingUp, Clock, Bookmark
 } from 'lucide-react';
+import AIGlyph from '@/components/shared/AIGlyph';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -92,9 +93,12 @@ export default function Dashboard() {
             </p>
           </div>
           <Link to={createPageUrl('Copilot')}>
-            <Button className="bg-slate-900 hover:bg-slate-800 shadow-sm">
-              <Sparkles className="h-4 w-4 mr-2" />
+            <Button className="bg-slate-900 hover:bg-slate-800 shadow-sm gap-2">
+              <AIGlyph size="sm" className="text-white" />
               Open Copilot
+              <kbd className="hidden sm:inline-flex px-1.5 py-0.5 text-xs bg-slate-700 text-slate-300 rounded">
+                ⌘/
+              </kbd>
             </Button>
           </Link>
         </div>
@@ -118,12 +122,17 @@ export default function Dashboard() {
           
           {queries.length === 0 ? (
             <Card className="p-12 text-center border-0 shadow-sm">
-              <MessageSquare className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500 mb-6">No queries yet</p>
+              <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                <AIGlyph size="xl" className="text-slate-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-700 mb-2">Ask your AI Copilot</h3>
+              <p className="text-slate-500 mb-6 max-w-sm mx-auto">
+                Get instant answers, summaries, and insights from your knowledge base and integrations
+              </p>
               <Link to={createPageUrl('Copilot')}>
-                <Button size="lg" className="bg-slate-900 hover:bg-slate-800 shadow-sm">
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Ask your first question
+                <Button size="lg" className="bg-slate-900 hover:bg-slate-800 shadow-sm gap-2">
+                  <AIGlyph size="sm" className="text-white" />
+                  Start conversation
                 </Button>
               </Link>
             </Card>

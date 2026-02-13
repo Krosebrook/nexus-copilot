@@ -381,11 +381,11 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                   <PanelLeft className="h-4 w-4" />
                 </Button>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-white" />
+                  <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center shadow-sm">
+                    <AIGlyph size="sm" className="text-white" />
                   </div>
                   <div>
-                    <h1 className="text-sm font-semibold text-slate-900">Copilot</h1>
+                    <h1 className="text-sm font-bold text-slate-700">Copilot</h1>
                     {currentOrg && (
                       <p className="text-xs text-slate-500">{currentOrg.name}</p>
                     )}
