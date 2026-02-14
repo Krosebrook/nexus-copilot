@@ -110,7 +110,7 @@ export default function AgentWorkflowStep({ config = {}, onChange, orgId, onTest
           className="text-sm"
         />
         <p className="text-xs text-slate-500 mt-1">
-          Variables: {{`trigger.data`}}, {{`step_1.result`}}, {{`workflow.id`}}
+          Variables: {'{{trigger.data}}'}, {'{{step_1.result}}'}, {'{{workflow.id}}'}
         </p>
       </div>
 
