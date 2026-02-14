@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import IntegrationActionStep from './IntegrationActionStep';
+import AgentWorkflowStep from './AgentWorkflowStep';
 
 const ACTION_TYPES = [
   { value: 'send_notification', label: 'Send Notification' },
@@ -253,21 +254,20 @@ export default function StepConfigPanel({ step, workflow, onUpdate, onClose, org
               </>
             )}
 
-            {localStep.config?.action === 'ai_agent' && (
-              <>
-                <div className="space-y-2">
-                  <Label>Agent Task</Label>
-                  <Textarea
-                    value={localStep.config?.agent_task || ''}
-                    onChange={(e) => updateConfig('agent_task', e.target.value)}
-                    placeholder="Describe what the agent should do..."
-                    rows={3}
-                  />
-                  <p className="text-xs text-slate-500">
-                    The agent will plan and execute this task autonomously
-                  </p>
-                </div>
-              </>
+            {localStep.config?.action === 'ai_agent' && orgId && (
+              <AgentWorkflowStep
+                config={localStep.config}
+                onChange={(agentConfig) => {
+                  setLocalStep({
+                    ...localStep,
+                    config: {
+                      ...localStep.config,
+                      ...agentConfig
+                    }
+                  });
+                }}
+                orgId={orgId}
+              />
             )}
 
             {localStep.config?.action === 'integration_action' && orgId && (
