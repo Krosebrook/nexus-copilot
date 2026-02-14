@@ -14,6 +14,7 @@ import NextStepSuggestions from '@/components/workflow/NextStepSuggestions';
 import WorkflowExecutionMonitor from '@/components/workflow/WorkflowExecutionMonitor';
 import PermissionGuard, { usePermissions } from '@/components/rbac/PermissionGuard';
 import WorkflowTemplates from '@/components/workflow/WorkflowTemplates';
+import WorkflowInsightsPanel from '@/components/workflow/WorkflowInsightsPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function WorkflowBuilder() {
@@ -390,6 +391,18 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
                 </div>
                 <div className="flex-1 flex">
                   <div className="flex-1 overflow-auto">
+                    {!isEditing && selectedWorkflow.execution_count > 0 && (
+                      <div className="p-6 pb-0">
+                        <WorkflowInsightsPanel
+                          workflowId={selectedWorkflow.id}
+                          orgId={currentOrg?.id}
+                          onApplyRecommendation={(insight) => {
+                            setIsEditing(true);
+                            toast.info('Review and apply changes in edit mode');
+                          }}
+                        />
+                      </div>
+                    )}
                     {isEditing && nextStepSuggestions.length > 0 && (
                       <div className="p-6 pb-0">
                         <NextStepSuggestions
