@@ -180,6 +180,20 @@ async function executeStep(step, triggerData, base44) {
       }
       break;
     
+    case 'sub_workflow':
+      const subWorkflowId = step.config?.sub_workflow_id;
+      if (subWorkflowId) {
+        const mappedData = step.config?.data_mapping ? JSON.parse(step.config.data_mapping) : triggerData;
+        const subResponse = await fetch(Deno.env.get('BASE44_FUNCTION_URL') + '/workflowExecute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workflow_id: subWorkflowId, trigger_data: mappedData })
+        });
+        const subResult = await subResponse.json();
+        return { sub_workflow_id: subWorkflowId, sub_execution_id: subResult.execution_id, status: subResult.status };
+      }
+      break;
+    
     default:
       return { executed: true };
   }
