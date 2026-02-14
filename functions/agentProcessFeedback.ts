@@ -96,65 +96,178 @@ Deno.serve(async (req) => {
 });
 
 async function applyFeedbackLearning(base44, agent, execution, feedback, corrections) {
-  // Generate learning insights from feedback
-  const learningPrompt = `Analyze this agent execution feedback and extract actionable learning:
+  // Extract task context
+  const taskContext = extractTaskContext(execution.task);
 
-Original Task: ${execution.task}
-Execution Status: ${execution.status}
-User Feedback: ${feedback.was_helpful ? 'Helpful' : 'Not helpful'}
-Rating: ${feedback.rating || 'N/A'}/5
-Comment: ${feedback.comment || 'None'}
+  // Process each correction into structured patterns
+  if (corrections && corrections.length > 0) {
+    for (const correction of corrections) {
+      // Analyze the correction to extract patterns
+      const patternAnalysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: `Analyze this user correction and extract structured learning patterns:
 
-${corrections.length > 0 ? `
-User Corrections:
-${corrections.map(c => `
-- Step ${c.step_number}: ${c.original_action}
-  → Should be: ${c.corrected_action}
-  Reason: ${c.reason}
-`).join('\n')}
-` : ''}
+Task Type: ${taskContext}
+Original Action: ${correction.original_action}
+Corrected Action: ${correction.corrected_action}
+User Reasoning: ${correction.reason}
 
 Extract:
-1. What went wrong or could improve
-2. Specific action patterns to avoid
-3. Specific action patterns to prefer
-4. Context where these patterns apply
+1. What pattern should be AVOIDED (the original approach)
+2. What pattern should be PREFERRED (the corrected approach)
+3. Specific conditions when this applies
+4. Generalized rule that can apply to similar tasks
 
-Return insights that can be used to improve future executions.`;
+Be specific and actionable.`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            avoid_pattern: {
+              type: 'object',
+              properties: {
+                description: { type: 'string' },
+                why_avoid: { type: 'string' },
+                conditions: { type: 'array', items: { type: 'string' } }
+              }
+            },
+            prefer_pattern: {
+              type: 'object',
+              properties: {
+                description: { type: 'string' },
+                why_prefer: { type: 'string' },
+                conditions: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          }
+        }
+      });
 
-  try {
-    const insights = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: learningPrompt,
+      // Store avoid pattern
+      if (patternAnalysis.avoid_pattern) {
+        await storeOrUpdatePattern(base44, {
+          org_id: agent.org_id,
+          agent_id: agent.id,
+          pattern_type: 'avoid',
+          task_context: taskContext,
+          original_action: correction.original_action,
+          corrected_action: null,
+          reasoning: patternAnalysis.avoid_pattern.why_avoid,
+          applicable_conditions: patternAnalysis.avoid_pattern.conditions || [],
+          feedback_id: feedback.id
+        });
+      }
+
+      // Store prefer pattern
+      if (patternAnalysis.prefer_pattern) {
+        await storeOrUpdatePattern(base44, {
+          org_id: agent.org_id,
+          agent_id: agent.id,
+          pattern_type: 'prefer',
+          task_context: taskContext,
+          original_action: correction.original_action,
+          corrected_action: correction.corrected_action,
+          reasoning: patternAnalysis.prefer_pattern.why_prefer,
+          applicable_conditions: patternAnalysis.prefer_pattern.conditions || [],
+          feedback_id: feedback.id
+        });
+      }
+    }
+  }
+
+  // Process overall feedback sentiment
+  if (feedback.was_helpful === false && feedback.comment) {
+    const generalLearning = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: `Extract general learning from negative feedback:
+
+Task: ${execution.task}
+Feedback: ${feedback.comment}
+Plan: ${execution.plan?.map(s => s.description).join(' → ')}
+
+What should the agent avoid doing in similar situations?`,
       response_json_schema: {
         type: 'object',
         properties: {
-          key_learnings: { type: 'array', items: { type: 'string' } },
           avoid_patterns: { type: 'array', items: { type: 'string' } },
-          prefer_patterns: { type: 'array', items: { type: 'string' } },
-          applicable_contexts: { type: 'array', items: { type: 'string' } }
+          context: { type: 'string' }
         }
       }
     });
 
-    console.log('[LEARNING] Applied feedback insights:', insights);
-    
-    // Store learning insights in audit log for future reference
-    await base44.asServiceRole.entities.AuditLog.create({
-      org_id: agent.org_id,
-      actor_email: 'system',
-      action: 'agent_learning_applied',
-      action_category: 'system',
-      resource_type: 'Agent',
-      resource_id: agent.id,
-      status: 'success',
-      details: {
-        execution_id: execution.id,
-        feedback_id: feedback.id,
-        insights
-      }
-    });
-
-  } catch (error) {
-    console.error('[LEARNING] Failed to extract insights:', error);
+    for (const pattern of generalLearning.avoid_patterns || []) {
+      await storeOrUpdatePattern(base44, {
+        org_id: agent.org_id,
+        agent_id: agent.id,
+        pattern_type: 'avoid',
+        task_context: taskContext,
+        original_action: pattern,
+        corrected_action: null,
+        reasoning: feedback.comment,
+        applicable_conditions: [generalLearning.context],
+        feedback_id: feedback.id
+      });
+    }
   }
+
+  console.log('[LEARNING] Structured patterns stored for agent improvement');
+}
+
+function extractTaskContext(task) {
+  const lower = task.toLowerCase();
+  if (lower.includes('ticket') || lower.includes('issue')) return 'ticket_management';
+  if (lower.includes('email') || lower.includes('message')) return 'communication';
+  if (lower.includes('data') || lower.includes('record')) return 'data_management';
+  if (lower.includes('report') || lower.includes('analysis')) return 'reporting';
+  if (lower.includes('notification') || lower.includes('alert')) return 'notifications';
+  return 'general_automation';
+}
+
+async function storeOrUpdatePattern(base44, patternData) {
+  // Check if similar pattern exists
+  const existing = await base44.asServiceRole.entities.AgentLearning.filter({
+    agent_id: patternData.agent_id,
+    pattern_type: patternData.pattern_type,
+    task_context: patternData.task_context
+  });
+
+  // Find exact or similar match
+  const similar = existing.find(p => {
+    const similarity = calculateSimilarity(
+      p.original_action || '',
+      patternData.original_action || ''
+    );
+    return similarity > 0.7; // 70% similarity threshold
+  });
+
+  if (similar) {
+    // Update existing pattern - increase confidence
+    const newConfidence = Math.min(similar.confidence_score + 0.2, 1.0);
+    const newCount = similar.feedback_count + 1;
+    
+    await base44.asServiceRole.entities.AgentLearning.update(similar.id, {
+      confidence_score: newConfidence,
+      feedback_count: newCount,
+      source_feedback_ids: [...(similar.source_feedback_ids || []), patternData.feedback_id],
+      last_validated: new Date().toISOString(),
+      reasoning: patternData.reasoning // Update with latest reasoning
+    });
+    
+    console.log(`[LEARNING] Pattern reinforced (confidence: ${newConfidence})`);
+  } else {
+    // Create new pattern
+    await base44.asServiceRole.entities.AgentLearning.create({
+      ...patternData,
+      confidence_score: 0.5, // Start with moderate confidence
+      feedback_count: 1,
+      source_feedback_ids: [patternData.feedback_id],
+      last_validated: new Date().toISOString()
+    });
+    
+    console.log(`[LEARNING] New pattern created`);
+  }
+}
+
+function calculateSimilarity(str1, str2) {
+  const words1 = str1.toLowerCase().split(/\s+/);
+  const words2 = str2.toLowerCase().split(/\s+/);
+  const intersection = words1.filter(w => words2.includes(w));
+  return intersection.length / Math.max(words1.length, words2.length);
 }

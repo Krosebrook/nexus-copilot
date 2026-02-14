@@ -24,26 +24,30 @@ Deno.serve(async (req) => {
       status: 'active'
     });
 
-    // Get agent's past executions for learning
-    const pastExecutions = await base44.asServiceRole.entities.AgentExecution.filter({
+    // Get agent's learned patterns
+    const learnedPatterns = await base44.asServiceRole.entities.AgentLearning.filter({
       agent_id,
       org_id
-    }, '-created_date', 20);
+    }, '-confidence_score');
 
-    const successfulPatterns = pastExecutions
-      .filter(e => e.status === 'completed' && e.user_feedback?.helpful)
-      .map(e => ({
-        task: e.task,
-        plan: e.plan?.map(s => s.description).join(' → '),
-        feedback: e.user_feedback?.comment
+    const preferPatterns = learnedPatterns
+      .filter(p => p.pattern_type === 'prefer' && p.confidence_score >= 0.4)
+      .map(p => ({
+        action: p.corrected_action || p.original_action,
+        context: p.task_context,
+        reasoning: p.reasoning,
+        conditions: p.applicable_conditions,
+        confidence: p.confidence_score
       }));
 
-    const failurePatterns = pastExecutions
-      .filter(e => e.status === 'failed' || e.user_feedback?.helpful === false)
-      .map(e => ({
-        task: e.task,
-        error: e.error_message,
-        feedback: e.user_feedback?.comment
+    const avoidPatterns = learnedPatterns
+      .filter(p => p.pattern_type === 'avoid' && p.confidence_score >= 0.4)
+      .map(p => ({
+        action: p.original_action,
+        context: p.task_context,
+        reasoning: p.reasoning,
+        conditions: p.applicable_conditions,
+        confidence: p.confidence_score
       }));
 
     // Create execution record
@@ -61,10 +65,28 @@ Deno.serve(async (req) => {
       capabilities: i.capabilities || []
     }));
 
-    const learningContext = successfulPatterns.length > 0 || failurePatterns.length > 0
-      ? `\n\nLearning from past executions:
-${successfulPatterns.length > 0 ? `Successful approaches:\n${successfulPatterns.map(p => `- Task: ${p.task}\n  Steps: ${p.plan}\n  Feedback: ${p.feedback || 'None'}`).join('\n')}` : ''}
-${failurePatterns.length > 0 ? `\nAvoid these mistakes:\n${failurePatterns.map(p => `- Task: ${p.task}\n  Error: ${p.error}\n  Feedback: ${p.feedback || 'None'}`).join('\n')}` : ''}`
+    const learningContext = preferPatterns.length > 0 || avoidPatterns.length > 0
+      ? `\n\nLearned Patterns (from user corrections and feedback):
+
+${preferPatterns.length > 0 ? `PREFER these approaches:
+${preferPatterns.map(p => `
+• ${p.action}
+  Context: ${p.context}
+  When: ${p.conditions.join(', ')}
+  Why: ${p.reasoning}
+  Confidence: ${Math.round(p.confidence * 100)}%
+`).join('\n')}` : ''}
+
+${avoidPatterns.length > 0 ? `AVOID these approaches:
+${avoidPatterns.map(p => `
+• ${p.action}
+  Context: ${p.context}
+  When: ${p.conditions.join(', ')}
+  Why: ${p.reasoning}
+  Confidence: ${Math.round(p.confidence * 100)}%
+`).join('\n')}` : ''}
+
+Apply these patterns when planning. Prioritize high-confidence patterns.`
       : '';
 
     // Get agent's allowed tools configuration
