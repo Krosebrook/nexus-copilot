@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 
 import GlobalSearch from '@/components/shared/GlobalSearch';
 import HelpButton from '@/components/shared/HelpButton';
+import CommandPalette from '@/components/shell/CommandPalette';
+import KeyboardShortcutsDialog from '@/components/shell/KeyboardShortcutsDialog';
 
 const PRIMARY_NAV = [
   { name: 'Dashboard', href: 'Dashboard', icon: LayoutDashboard },
@@ -33,6 +35,7 @@ const WORKSPACE_NAV = [
   { name: 'Workflows', href: 'WorkflowBuilder', icon: Activity },
   { name: 'Agents', href: 'AgentBuilder', icon: Workflow },
   { name: 'Analytics', href: 'Analytics', icon: Activity },
+  { name: 'Activity Log', href: 'ActivityLog', icon: Activity },
   { name: 'Approvals', href: 'Approvals', icon: CheckCircle },
   { name: 'Settings', href: 'Settings', icon: Settings },
 ];
@@ -62,6 +65,8 @@ export default function Layout({ children, currentPageName }) {
   const [currentOrg, setCurrentOrg] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -91,6 +96,29 @@ export default function Layout({ children, currentPageName }) {
     };
     fetchUser();
   }, [currentPageName]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Command palette
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandOpen(true);
+      }
+      // Help dialog
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+        e.preventDefault();
+        setShortcutsOpen(true);
+      }
+      // Copilot shortcut
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        window.location.href = createPageUrl('Copilot');
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Standalone pages render without layout
   if (STANDALONE_PAGES.includes(currentPageName)) {
@@ -351,6 +379,18 @@ export default function Layout({ children, currentPageName }) {
         open={searchOpen}
         onOpenChange={setSearchOpen}
         recentSearches={['quarterly goals', 'team metrics', 'project status']}
+      />
+
+      {/* Command Palette */}
+      <CommandPalette
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+      />
+
+      {/* Keyboard Shortcuts */}
+      <KeyboardShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
       />
       </div>
     </ErrorBoundary>
