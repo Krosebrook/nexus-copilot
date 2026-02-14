@@ -147,73 +147,155 @@ Return a JSON object with:
 
     // Update execution with plan
     await base44.asServiceRole.entities.AgentExecution.update(execution.id, {
-      plan: planResponse.plan.map(s => ({ ...s, status: 'pending' })),
+      plan: planResponse.plan.map(s => ({ ...s, status: 'pending', retry_count: 0 })),
       status: 'executing',
     });
 
-    // Step 2: Execute the plan
+    // Step 2: Execute the plan with context management and error handling
     const results = [];
     let currentData = context;
+    let executionContext = {
+      trigger: context,
+      workflow: { execution_id: execution.id },
+      steps: {}
+    };
 
-    for (const step of planResponse.plan) {
-      try {
-        let stepResult;
+    let currentPlan = [...planResponse.plan];
+    let planRevisionCount = 0;
+    const maxRetries = 3;
 
-        // Execute based on action type
-        if (step.tool && integrations.some(i => i.type === step.tool)) {
-          // Execute integration action
-          stepResult = await executeIntegrationAction(base44, {
-            integration_type: step.tool,
-            action_type: step.action_type,
-            parameters: step.parameters,
-            org_id
+    for (let i = 0; i < currentPlan.length; i++) {
+      const step = currentPlan[i];
+      let stepResult = null;
+      let retryCount = 0;
+      let stepSuccess = false;
+
+      // Check dependencies
+      if (step.depends_on && step.depends_on.length > 0) {
+        const dependenciesMet = step.depends_on.every(depNum => 
+          results.find(r => r.step_number === depNum && r.status === 'completed')
+        );
+        if (!dependenciesMet) {
+          results.push({
+            step_number: step.step_number,
+            description: step.description,
+            status: 'skipped',
+            error: 'Dependencies not met',
+            timestamp: new Date().toISOString()
           });
-        } else if (step.action_type === 'entity_crud') {
-          // Entity operations
-          stepResult = await executeEntityAction(base44, step.parameters, org_id);
-        } else if (step.action_type === 'ai_analysis') {
-          // AI analysis
-          stepResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
-            prompt: step.description + '\n\nData: ' + JSON.stringify(currentData),
-          });
-        } else {
-          // Generic action
-          stepResult = { status: 'simulated', description: step.description };
+          continue;
         }
+      }
 
-        results.push({
-          step_number: step.step_number,
-          description: step.description,
-          status: 'completed',
-          result: stepResult,
-          timestamp: new Date().toISOString()
-        });
+      // Retry loop for failed steps
+      while (!stepSuccess && retryCount <= maxRetries) {
+        try {
+          // Inject execution context into step parameters
+          const enrichedParams = injectContext(step.parameters, executionContext);
 
-        // Update current data context
-        currentData = { ...currentData, [`step_${step.step_number}`]: stepResult };
+          // Execute based on action type
+          if (step.tool && integrations.some(i => i.type === step.tool)) {
+            stepResult = await executeIntegrationAction(base44, {
+              integration_type: step.tool,
+              action_type: step.action_type,
+              parameters: enrichedParams,
+              org_id
+            });
+          } else if (step.action_type === 'entity_crud') {
+            stepResult = await executeEntityAction(base44, enrichedParams, org_id);
+          } else if (step.action_type === 'ai_analysis') {
+            stepResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+              prompt: step.description + '\n\nContext: ' + JSON.stringify(executionContext),
+            });
+          } else {
+            stepResult = { status: 'simulated', description: step.description };
+          }
 
-      } catch (error) {
-        results.push({
-          step_number: step.step_number,
-          description: step.description,
-          status: 'failed',
-          error: error.message,
-          timestamp: new Date().toISOString()
-        });
+          stepSuccess = true;
 
-        // Stop execution on error
-        await base44.asServiceRole.entities.AgentExecution.update(execution.id, {
-          status: 'failed',
-          error_message: error.message,
-          result: { steps: results }
-        });
+          results.push({
+            step_number: step.step_number,
+            description: step.description,
+            status: 'completed',
+            result: stepResult,
+            retry_count: retryCount,
+            timestamp: new Date().toISOString()
+          });
 
-        return Response.json({
-          execution_id: execution.id,
-          status: 'failed',
-          error: error.message,
-          completed_steps: results
-        });
+          // Update execution context with step results
+          executionContext.steps[`step_${step.step_number}`] = stepResult;
+          currentData = { ...currentData, [`step_${step.step_number}`]: stepResult };
+
+        } catch (error) {
+          retryCount++;
+          
+          if (retryCount > maxRetries) {
+            // Max retries reached - decide whether to replan or fail
+            const shouldReplan = planRevisionCount < 2 && i < currentPlan.length - 1;
+            
+            if (shouldReplan) {
+              console.log(`[AGENT] Step ${step.step_number} failed after retries. Replanning...`);
+              
+              // Dynamic replanning
+              const replanResult = await replanAfterFailure(base44, {
+                original_plan: currentPlan,
+                failed_step: step,
+                error: error.message,
+                completed_steps: results,
+                execution_context: executionContext,
+                remaining_goal: task
+              });
+
+              if (replanResult.revised_plan) {
+                planRevisionCount++;
+                currentPlan = [
+                  ...currentPlan.slice(0, i + 1),
+                  ...replanResult.revised_plan
+                ];
+                
+                results.push({
+                  step_number: step.step_number,
+                  description: step.description,
+                  status: 'failed_replanned',
+                  error: error.message,
+                  retry_count: retryCount,
+                  replanned: true,
+                  timestamp: new Date().toISOString()
+                });
+
+                // Continue with revised plan
+                break;
+              }
+            }
+
+            // Cannot recover - fail execution
+            results.push({
+              step_number: step.step_number,
+              description: step.description,
+              status: 'failed',
+              error: error.message,
+              retry_count: retryCount,
+              timestamp: new Date().toISOString()
+            });
+
+            await base44.asServiceRole.entities.AgentExecution.update(execution.id, {
+              status: 'failed',
+              error_message: `Step ${step.step_number} failed: ${error.message}`,
+              result: { steps: results, plan_revisions: planRevisionCount }
+            });
+
+            return Response.json({
+              execution_id: execution.id,
+              status: 'failed',
+              error: error.message,
+              completed_steps: results,
+              plan_revisions: planRevisionCount
+            });
+          }
+
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        }
       }
     }
 
@@ -222,7 +304,9 @@ Return a JSON object with:
       status: 'completed',
       result: {
         steps: results,
-        final_data: currentData
+        final_data: currentData,
+        execution_context: executionContext,
+        plan_revisions: planRevisionCount
       }
     });
 
@@ -241,11 +325,13 @@ Return a JSON object with:
     return Response.json({
       execution_id: execution.id,
       status: 'completed',
-      plan: planResponse.plan,
+      plan: currentPlan,
       results: results,
       confidence: planResponse.overall_confidence || planResponse.confidence,
       autonomous_executable: planResponse.autonomous_executable,
-      chain_length: results.length
+      chain_length: results.filter(r => r.status === 'completed').length,
+      plan_revisions: planRevisionCount,
+      execution_context: executionContext
     });
 
   } catch (error) {
@@ -333,15 +419,111 @@ async function executeEmailAction(base44, action, params) {
 }
 
 async function executeEntityAction(base44, parameters, org_id) {
-  const { entity_name, operation, data } = parameters;
+  const { entity_name, operation, data, filters } = parameters;
   
   if (operation === 'create') {
     const record = await base44.asServiceRole.entities[entity_name].create({
       ...data,
       org_id
     });
-    return { operation: 'create', entity: entity_name, id: record.id };
+    return { operation: 'create', entity: entity_name, id: record.id, data: record };
+  } else if (operation === 'update' && filters) {
+    const records = await base44.asServiceRole.entities[entity_name].filter(filters);
+    if (records.length > 0) {
+      await base44.asServiceRole.entities[entity_name].update(records[0].id, data);
+      return { operation: 'update', entity: entity_name, id: records[0].id, updated: true };
+    }
+  } else if (operation === 'read' && filters) {
+    const records = await base44.asServiceRole.entities[entity_name].filter(filters);
+    return { operation: 'read', entity: entity_name, count: records.length, data: records };
   }
   
   return { operation, entity: entity_name, status: 'completed' };
+}
+
+function injectContext(parameters, executionContext) {
+  if (!parameters || typeof parameters !== 'object') return parameters;
+  
+  const injected = JSON.parse(JSON.stringify(parameters));
+  
+  // Replace context variables like {{step_1.result.id}}
+  const replaceVars = (obj) => {
+    for (const key in obj) {
+      if (typeof obj[key] === 'string' && obj[key].includes('{{')) {
+        obj[key] = obj[key].replace(/\{\{([^}]+)\}\}/g, (match, path) => {
+          const value = getNestedValue(executionContext, path.trim());
+          return value !== undefined ? value : match;
+        });
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+        replaceVars(obj[key]);
+      }
+    }
+  };
+  
+  replaceVars(injected);
+  return injected;
+}
+
+function getNestedValue(obj, path) {
+  return path.split('.').reduce((current, key) => current?.[key], obj);
+}
+
+async function replanAfterFailure(base44, context) {
+  const { original_plan, failed_step, error, completed_steps, execution_context, remaining_goal } = context;
+  
+  try {
+    const replanPrompt = `A multi-step plan has partially failed. Analyze and create a revised plan.
+
+Original Goal: ${remaining_goal}
+Failed Step: ${failed_step.step_number} - ${failed_step.description}
+Error: ${error}
+
+Completed Steps:
+${completed_steps.filter(s => s.status === 'completed').map(s => `✓ Step ${s.step_number}: ${s.description}`).join('\n')}
+
+Available Context:
+${JSON.stringify(execution_context, null, 2)}
+
+Create a revised plan to complete the remaining goal. Consider:
+1. What went wrong and how to avoid it
+2. Alternative approaches using available context
+3. Simpler steps that are more likely to succeed
+
+Return revised steps starting from step ${failed_step.step_number + 1}.`;
+
+    const replanResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: replanPrompt,
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          can_recover: { type: 'boolean' },
+          reasoning: { type: 'string' },
+          revised_plan: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                step_number: { type: 'number' },
+                description: { type: 'string' },
+                action_type: { type: 'string' },
+                tool: { type: 'string' },
+                parameters: { type: 'object' },
+                confidence: { type: 'number' }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (replanResponse.can_recover && replanResponse.revised_plan) {
+      console.log('[REPLAN] Success:', replanResponse.reasoning);
+      return { revised_plan: replanResponse.revised_plan };
+    }
+
+    return { revised_plan: null };
+  } catch (e) {
+    console.error('[REPLAN] Failed:', e);
+    return { revised_plan: null };
+  }
 }
