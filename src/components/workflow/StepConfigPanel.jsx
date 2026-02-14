@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import IntegrationActionStep from './IntegrationActionStep';
 import AgentWorkflowStep from './AgentWorkflowStep';
+import SubWorkflowStep from './SubWorkflowStep';
 
 const ACTION_TYPES = [
   { value: 'send_notification', label: 'Send Notification' },
@@ -263,6 +264,22 @@ export default function StepConfigPanel({ step, workflow, onUpdate, onClose, org
                     config: {
                       ...localStep.config,
                       ...agentConfig
+                    }
+                  });
+                }}
+                orgId={orgId}
+              />
+            )}
+
+            {localStep.config?.action === 'sub_workflow' && orgId && (
+              <SubWorkflowStep
+                config={localStep.config}
+                onChange={(subWorkflowConfig) => {
+                  setLocalStep({
+                    ...localStep,
+                    config: {
+                      ...localStep.config,
+                      ...subWorkflowConfig
                     }
                   });
                 }}
