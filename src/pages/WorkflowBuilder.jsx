@@ -13,6 +13,8 @@ import WorkflowSuggestions from '@/components/workflow/WorkflowSuggestions';
 import NextStepSuggestions from '@/components/workflow/NextStepSuggestions';
 import WorkflowExecutionMonitor from '@/components/workflow/WorkflowExecutionMonitor';
 import PermissionGuard, { usePermissions } from '@/components/rbac/PermissionGuard';
+import WorkflowTemplates from '@/components/workflow/WorkflowTemplates';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function WorkflowBuilder() {
   const { can } = usePermissions();
@@ -312,13 +314,31 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
               </div>
             </div>
 
-            <div className="p-4">
-              <WorkflowSuggestions
-                suggestions={suggestions}
-                isLoading={loadingSuggestions}
-                onApply={applyTemplate}
-                onRefresh={generateSuggestions}
-              />
+            <div className="px-4 pb-4">
+              <Tabs defaultValue="suggestions" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-3">
+                  <TabsTrigger value="suggestions" className="text-xs">AI Suggestions</TabsTrigger>
+                  <TabsTrigger value="templates" className="text-xs">Templates</TabsTrigger>
+                </TabsList>
+                <TabsContent value="suggestions" className="mt-0">
+                  <WorkflowSuggestions
+                    orgId={currentOrg?.id}
+                    onCreateWorkflow={(workflow) => {
+                      setSelectedWorkflow(workflow);
+                      setIsEditing(true);
+                    }}
+                  />
+                </TabsContent>
+                <TabsContent value="templates" className="mt-0">
+                  <WorkflowTemplates
+                    orgId={currentOrg?.id}
+                    onSelectTemplate={(workflow) => {
+                      setSelectedWorkflow(workflow);
+                      setIsEditing(true);
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
 
             <WorkflowList
