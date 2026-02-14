@@ -10,12 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import AgentActionReview from '@/components/agents/AgentActionReview';
+import AgentFeedbackPanel from '@/components/agents/AgentFeedbackPanel';
 
 export default function AgentWorkflowStep({ config = {}, onChange, orgId, onTest }) {
   const [taskTemplate, setTaskTemplate] = useState(config.task_template || '');
   const [selectedAgent, setSelectedAgent] = useState(config.agent_id || '');
   const [requiresApproval, setRequiresApproval] = useState(config.requires_approval || false);
+  const [enableChaining, setEnableChaining] = useState(config.enable_chaining !== false);
   const [testExecution, setTestExecution] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const { data: agents = [] } = useQuery({
     queryKey: ['agents', orgId],
@@ -47,6 +50,17 @@ export default function AgentWorkflowStep({ config = {}, onChange, orgId, onTest
       agent_id: selectedAgent,
       task_template: taskTemplate,
       requires_approval: checked,
+      enable_chaining: enableChaining,
+    });
+  };
+
+  const handleChainingChange = (checked) => {
+    setEnableChaining(checked);
+    onChange?.({
+      agent_id: selectedAgent,
+      task_template: taskTemplate,
+      requires_approval: requiresApproval,
+      enable_chaining: checked,
     });
   };
 
@@ -114,17 +128,32 @@ export default function AgentWorkflowStep({ config = {}, onChange, orgId, onTest
         </p>
       </div>
 
-      <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
-        <div>
-          <Label className="text-sm font-medium">Require User Approval</Label>
-          <p className="text-xs text-slate-500">
-            Wait for user confirmation before executing agent actions
-          </p>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+          <div>
+            <Label className="text-sm font-medium">Enable Action Chaining</Label>
+            <p className="text-xs text-slate-500">
+              Allow agent to autonomously chain multiple tool actions
+            </p>
+          </div>
+          <Switch
+            checked={enableChaining}
+            onCheckedChange={handleChainingChange}
+          />
         </div>
-        <Switch
-          checked={requiresApproval}
-          onCheckedChange={handleApprovalChange}
-        />
+
+        <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+          <div>
+            <Label className="text-sm font-medium">Require User Approval</Label>
+            <p className="text-xs text-slate-500">
+              Wait for user confirmation before executing agent actions
+            </p>
+          </div>
+          <Switch
+            checked={requiresApproval}
+            onCheckedChange={handleApprovalChange}
+          />
+        </div>
       </div>
 
       {selectedAgent && taskTemplate && (
@@ -140,7 +169,7 @@ export default function AgentWorkflowStep({ config = {}, onChange, orgId, onTest
       )}
 
       {testExecution && (
-        <div className="mt-4">
+        <div className="mt-4 space-y-3">
           <AgentActionReview
             execution={{
               id: testExecution.execution_id,
@@ -151,6 +180,34 @@ export default function AgentWorkflowStep({ config = {}, onChange, orgId, onTest
               agent_id: selectedAgent
             }}
           />
+          
+          {testExecution.status === 'completed' && (
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFeedback(!showFeedback)}
+                className="w-full"
+              >
+                {showFeedback ? 'Hide' : 'Provide'} Feedback
+              </Button>
+              
+              {showFeedback && (
+                <div className="mt-3">
+                  <AgentFeedbackPanel
+                    execution={{
+                      id: testExecution.execution_id,
+                      task: taskTemplate,
+                      plan: testExecution.plan
+                    }}
+                    agentId={selectedAgent}
+                    orgId={orgId}
+                    onFeedbackSubmitted={() => setShowFeedback(false)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

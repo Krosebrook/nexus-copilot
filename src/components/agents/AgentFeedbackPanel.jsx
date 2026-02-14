@@ -1,229 +1,215 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Star, ThumbsUp, ThumbsDown, TrendingUp, TrendingDown } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThumbsUp, ThumbsDown, Edit, MessageSquare, Send } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import moment from 'moment';
 
-export default function AgentFeedbackPanel({ agentId, orgId }) {
-  const [selectedExecution, setSelectedExecution] = useState(null);
-  const [feedbackData, setFeedbackData] = useState({ rating: 0, comment: '', helpful: null });
+export default function AgentFeedbackPanel({ execution, agentId, orgId, onFeedbackSubmitted }) {
+  const [rating, setRating] = useState(0);
+  const [wasHelpful, setWasHelpful] = useState(null);
+  const [comment, setComment] = useState('');
+  const [corrections, setCorrections] = useState([]);
+  const [showCorrections, setShowCorrections] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: executions = [] } = useQuery({
-    queryKey: ['agent-executions', agentId],
-    queryFn: () => base44.entities.AgentExecution.filter({ agent_id: agentId }, '-created_date', 10),
-    enabled: !!agentId
-  });
-
-  const { data: agent } = useQuery({
-    queryKey: ['agent', agentId],
-    queryFn: () => base44.entities.Agent.filter({ id: agentId }).then(a => a[0]),
-    enabled: !!agentId
-  });
-
   const feedbackMutation = useMutation({
-    mutationFn: async ({ execution_id, feedback }) => {
-      await base44.entities.AgentExecution.update(execution_id, {
-        user_feedback: feedback
+    mutationFn: async (feedbackData) => {
+      const response = await base44.functions.invoke('agentProcessFeedback', {
+        agent_id: agentId,
+        execution_id: execution.id,
+        org_id: orgId,
+        ...feedbackData
       });
+      return response.data;
     },
     onSuccess: () => {
-      toast.success('Feedback submitted');
-      queryClient.invalidateQueries({ queryKey: ['agent-executions'] });
-      setSelectedExecution(null);
-      setFeedbackData({ rating: 0, comment: '', helpful: null });
+      toast.success('Feedback submitted - agent will learn from this');
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      onFeedbackSubmitted?.();
+    },
+    onError: () => {
+      toast.error('Failed to submit feedback');
     }
   });
 
-  const handleSubmitFeedback = () => {
-    if (feedbackData.rating === 0) {
-      toast.error('Please provide a rating');
+  const handleSubmit = () => {
+    if (!rating && wasHelpful === null) {
+      toast.error('Please rate the execution or mark as helpful/not helpful');
       return;
     }
+
     feedbackMutation.mutate({
-      execution_id: selectedExecution.id,
-      feedback: feedbackData
+      feedback_type: corrections.length > 0 ? 'correction' : 'rating',
+      rating: rating || undefined,
+      was_helpful: wasHelpful,
+      comment,
+      corrections
     });
   };
 
-  const performanceMetrics = agent?.performance_metrics || {};
+  const addCorrection = (step) => {
+    setCorrections([...corrections, {
+      step_number: step.step_number,
+      original_action: step.description,
+      corrected_action: '',
+      reason: ''
+    }]);
+    setShowCorrections(true);
+  };
+
+  const updateCorrection = (index, field, value) => {
+    const updated = [...corrections];
+    updated[index][field] = value;
+    setCorrections(updated);
+  };
+
+  const removeCorrection = (index) => {
+    setCorrections(corrections.filter((_, i) => i !== index));
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Performance Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Performance Metrics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-xs text-slate-600 mb-1">Success Rate</p>
-              <div className="flex items-center gap-2">
-                <p className="text-xl font-semibold">
-                  {performanceMetrics.success_rate?.toFixed(1) || 0}%
-                </p>
-                {performanceMetrics.success_rate > 80 ? (
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                ) : (
-                  <TrendingDown className="h-4 w-4 text-red-600" />
-                )}
-              </div>
-            </div>
+    <Card className="p-4 space-y-4 bg-slate-50">
+      <div>
+        <Label className="text-sm font-semibold">How helpful was this execution?</Label>
+        <div className="flex gap-2 mt-2">
+          <Button
+            variant={wasHelpful === true ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setWasHelpful(true)}
+            className="gap-2"
+          >
+            <ThumbsUp className="h-4 w-4" />
+            Helpful
+          </Button>
+          <Button
+            variant={wasHelpful === false ? 'destructive' : 'outline'}
+            size="sm"
+            onClick={() => setWasHelpful(false)}
+            className="gap-2"
+          >
+            <ThumbsDown className="h-4 w-4" />
+            Not Helpful
+          </Button>
+        </div>
+      </div>
 
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-xs text-slate-600 mb-1">Avg Satisfaction</p>
-              <div className="flex items-center gap-1">
-                <p className="text-xl font-semibold">
-                  {performanceMetrics.user_satisfaction_avg?.toFixed(1) || 'N/A'}
-                </p>
-                {performanceMetrics.user_satisfaction_avg > 0 && (
-                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                )}
-              </div>
-            </div>
+      <div>
+        <Label className="text-sm font-semibold">Rate execution quality</Label>
+        <div className="flex gap-1 mt-2">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              onClick={() => setRating(star)}
+              className={`text-2xl ${star <= rating ? 'text-yellow-500' : 'text-slate-300'}`}
+            >
+              ★
+            </button>
+          ))}
+        </div>
+      </div>
 
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-xs text-slate-600 mb-1">Total Executions</p>
-              <p className="text-xl font-semibold">{performanceMetrics.total_executions || 0}</p>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-xs text-slate-600 mb-1">Avg Time</p>
-              <p className="text-xl font-semibold">
-                {performanceMetrics.avg_execution_time_ms 
-                  ? `${(performanceMetrics.avg_execution_time_ms / 1000).toFixed(1)}s`
-                  : 'N/A'}
-              </p>
-            </div>
+      {execution.plan && execution.plan.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-sm font-semibold">Suggest corrections</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCorrections(!showCorrections)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              {showCorrections ? 'Hide' : 'Show'} Corrections
+            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Recent Executions for Feedback */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Recent Executions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {executions.map((execution) => (
-              <div
-                key={execution.id}
-                className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer"
-                onClick={() => setSelectedExecution(execution)}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-sm font-medium text-slate-900 flex-1">
-                    {execution.task}
-                  </p>
-                  <Badge variant={execution.status === 'completed' ? 'default' : 'destructive'} className="text-xs">
-                    {execution.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>{moment(execution.created_date).fromNow()}</span>
-                  {execution.user_feedback ? (
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                      <span>{execution.user_feedback.rating}/5</span>
+          {showCorrections && (
+            <div className="space-y-3">
+              {execution.plan.map((step) => (
+                <div key={step.step_number} className="p-3 bg-white rounded-lg border border-slate-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-500">Step {step.step_number}</p>
+                      <p className="text-sm text-slate-700">{step.description}</p>
                     </div>
-                  ) : (
-                    <span className="text-blue-600">Add feedback</span>
-                  )}
+                    {!corrections.find(c => c.step_number === step.step_number) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => addCorrection(step)}
+                      >
+                        Correct
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
 
-      {/* Feedback Form */}
-      {selectedExecution && (
-        <Card className="border-2 border-blue-500">
-          <CardHeader>
-            <CardTitle className="text-base">Provide Feedback</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label className="mb-2">Was this execution helpful?</Label>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  variant={feedbackData.helpful === true ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFeedbackData({ ...feedbackData, helpful: true })}
-                >
-                  <ThumbsUp className="h-4 w-4 mr-1" />
-                  Yes
-                </Button>
-                <Button
-                  variant={feedbackData.helpful === false ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFeedbackData({ ...feedbackData, helpful: false })}
-                >
-                  <ThumbsDown className="h-4 w-4 mr-1" />
-                  No
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <Label className="mb-2">Rating</Label>
-              <div className="flex gap-1 mt-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => setFeedbackData({ ...feedbackData, rating: star })}
-                    className="focus:outline-none"
-                  >
-                    <Star
-                      className={`h-6 w-6 ${
-                        star <= feedbackData.rating
-                          ? 'fill-yellow-500 text-yellow-500'
-                          : 'text-slate-300'
-                      }`}
+              {corrections.map((correction, idx) => (
+                <div key={idx} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline">Step {correction.step_number} Correction</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeCorrection(idx)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                  <div>
+                    <Label className="text-xs">What should it do instead?</Label>
+                    <Input
+                      value={correction.corrected_action}
+                      onChange={(e) => updateCorrection(idx, 'corrected_action', e.target.value)}
+                      placeholder="Describe the correct action..."
+                      className="mt-1"
                     />
-                  </button>
-                ))}
-              </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Why is this better?</Label>
+                    <Input
+                      value={correction.reason}
+                      onChange={(e) => updateCorrection(idx, 'reason', e.target.value)}
+                      placeholder="Explain the reasoning..."
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div>
-              <Label>Comments (Optional)</Label>
-              <Textarea
-                value={feedbackData.comment}
-                onChange={(e) => setFeedbackData({ ...feedbackData, comment: e.target.value })}
-                placeholder="How can this agent improve?"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSubmitFeedback}
-                disabled={feedbackMutation.isPending}
-                className="flex-1"
-              >
-                Submit Feedback
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedExecution(null);
-                  setFeedbackData({ rating: 0, comment: '', helpful: null });
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       )}
-    </div>
+
+      <div>
+        <Label className="text-sm font-semibold">Additional feedback (optional)</Label>
+        <Textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Share any other thoughts about this execution..."
+          rows={3}
+          className="mt-2"
+        />
+      </div>
+
+      <Button
+        onClick={handleSubmit}
+        disabled={feedbackMutation.isPending}
+        className="w-full gap-2"
+      >
+        <Send className="h-4 w-4" />
+        {feedbackMutation.isPending ? 'Submitting...' : 'Submit Feedback'}
+      </Button>
+
+      <p className="text-xs text-slate-500 text-center">
+        Your feedback helps the agent improve future executions
+      </p>
+    </Card>
   );
 }
