@@ -376,6 +376,7 @@ function EditAgentDialog({ agent, orgId, onClose, onUpdate }) {
 
           <TabsContent value="learning" className="mt-4">
             <AgentLearningInsights
+              agentId={agent.id}
               agent={agent}
               orgId={orgId}
             />

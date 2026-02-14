@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
-export default function AgentLearningInsights({ agentId, orgId }) {
+export default function AgentLearningInsights({ agentId, orgId, agent }) {
   const { data: patterns = [], isLoading } = useQuery({
     queryKey: ['agent-learning', agentId],
     queryFn: () => base44.entities.AgentLearning.filter({ 
