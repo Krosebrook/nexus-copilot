@@ -32,6 +32,7 @@ const WORKSPACE_NAV = [
   { name: 'Knowledge', href: 'Knowledge', icon: Book },
   { name: 'Workflows', href: 'WorkflowBuilder', icon: Activity },
   { name: 'Agents', href: 'AgentBuilder', icon: Workflow },
+  { name: 'Analytics', href: 'Analytics', icon: Activity },
   { name: 'Approvals', href: 'Approvals', icon: CheckCircle },
   { name: 'Settings', href: 'Settings', icon: Settings },
 ];

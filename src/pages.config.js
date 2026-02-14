@@ -61,6 +61,7 @@ import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import SystemHealth from './pages/SystemHealth';
 import WorkflowBuilder from './pages/WorkflowBuilder';
+import Analytics from './pages/Analytics';
 import __Layout from './Layout.jsx';
 
 
@@ -79,6 +80,7 @@ export const PAGES = {
     "Settings": Settings,
     "SystemHealth": SystemHealth,
     "WorkflowBuilder": WorkflowBuilder,
+    "Analytics": Analytics,
 }
 
 export const pagesConfig = {
