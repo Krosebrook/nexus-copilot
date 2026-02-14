@@ -1,103 +1,200 @@
-import React, { useState } from 'react';
-import { Sparkles, Loader2, ChevronRight } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Sparkles, ArrowRight, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import AIGlyph from '@/components/shared/AIGlyph';
+import { toast } from "sonner";
 
-export default function WorkflowSuggestions({ 
-  suggestions, 
-  isLoading, 
-  onApply, 
-  onRefresh 
-}) {
-  const [expandedId, setExpandedId] = useState(null);
+export default function WorkflowSuggestions({ orgId, onCreateWorkflow }) {
+  const queryClient = useQueryClient();
+
+  const { data: suggestions, isLoading } = useQuery({
+    queryKey: ['workflow-suggestions', orgId],
+    queryFn: async () => {
+      // Fetch user activity patterns
+      const queries = await base44.entities.Query.filter({ org_id: orgId }, '-created_date', 100);
+      const integrations = await base44.entities.Integration.filter({ org_id: orgId, status: 'active' });
+      const auditLogs = await base44.entities.AuditLog.filter({ org_id: orgId }, '-created_date', 200);
+
+      // Analyze patterns and generate suggestions
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Analyze this workspace activity and suggest 3-4 practical workflow automations. Return only JSON.
+
+Active integrations: ${integrations.map(i => i.type).join(', ')}
+Common query types: ${queries.slice(0, 20).map(q => q.response_type).join(', ')}
+Frequent actions: ${auditLogs.slice(0, 30).map(l => l.action).join(', ')}
+
+For each suggestion, provide:
+- name (short, actionable)
+- description (one sentence)
+- trigger (what starts it)
+- actions (array of 2-3 steps)
+- impact (time saved or benefit)
+- difficulty (easy/medium)
+
+Example format:
+{
+  "suggestions": [{
+    "name": "Auto-share insights to Slack",
+    "description": "Post important query responses to your team channel",
+    "trigger": "When query is saved",
+    "actions": ["Detect saved query", "Format response", "Post to Slack"],
+    "impact": "Share knowledge instantly",
+    "difficulty": "easy"
+  }]
+}`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            suggestions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string' },
+                  description: { type: 'string' },
+                  trigger: { type: 'string' },
+                  actions: { type: 'array', items: { type: 'string' } },
+                  impact: { type: 'string' },
+                  difficulty: { type: 'string' }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return response?.suggestions || [];
+    },
+    enabled: !!orgId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const createWorkflowMutation = useMutation({
+    mutationFn: async (suggestion) => {
+      const workflow = await base44.entities.Workflow.create({
+        org_id: orgId,
+        name: suggestion.name,
+        description: suggestion.description,
+        trigger_type: 'entity_event',
+        trigger_config: {
+          entity_name: 'Query',
+          event_types: ['update'],
+        },
+        steps: suggestion.actions.map((action, idx) => ({
+          id: `step_${idx}`,
+          type: 'action',
+          config: {
+            description: action,
+          },
+          position: { x: idx * 200, y: 100 }
+        })),
+        is_active: false,
+      });
+      return workflow;
+    },
+    onSuccess: (workflow, suggestion) => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      toast.success('Workflow template created', {
+        description: 'Configure the details and activate it',
+        action: {
+          label: 'Configure',
+          onClick: () => onCreateWorkflow?.(workflow)
+        }
+      });
+    },
+  });
 
   if (isLoading) {
     return (
-      <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
-        <CardContent className="p-6 text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600 mx-auto mb-3" />
-          <p className="text-sm text-slate-600">Analyzing your workspace patterns...</p>
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-700">
+            <AIGlyph size="sm" animated />
+            AI Workflow Suggestions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-24 bg-slate-100 rounded-lg animate-pulse" />
+            ))}
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (!suggestions || suggestions.length === 0) {
-    return null;
-  }
-
   return (
-    <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+    <Card className="border-0 shadow-sm">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
-            AI Workflow Suggestions
-          </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onRefresh}>
-            <Sparkles className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+        <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-700">
+          <AIGlyph size="sm" />
+          AI Workflow Suggestions
+        </CardTitle>
+        <p className="text-sm text-slate-500">Based on your team's activity patterns</p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {suggestions.map((suggestion) => (
-          <div
-            key={suggestion.id}
-            className={cn(
-              "bg-white rounded-lg border border-slate-200 p-4 cursor-pointer transition-all hover:shadow-md",
-              expandedId === suggestion.id && "shadow-md"
-            )}
-            onClick={() => setExpandedId(expandedId === suggestion.id ? null : suggestion.id)}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <h3 className="font-semibold text-slate-900 mb-1">{suggestion.name}</h3>
-                <p className="text-sm text-slate-600">{suggestion.description}</p>
-              </div>
-              <Badge variant="secondary" className="ml-2 bg-purple-100 text-purple-700 border-purple-200">
-                {suggestion.confidence}% match
-              </Badge>
-            </div>
-
-            {expandedId === suggestion.id && (
-              <div className="mt-3 pt-3 border-t border-slate-100 space-y-3">
-                <div>
-                  <p className="text-xs font-medium text-slate-700 mb-2">Workflow Steps:</p>
-                  <div className="space-y-1.5">
-                    {suggestion.steps.map((step, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-slate-600">
-                        <div className="h-5 w-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-medium">
-                          {idx + 1}
-                        </div>
-                        <span>{step}</span>
+      <CardContent>
+        <div className="space-y-3">
+          {suggestions.map((suggestion, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              <Card className="border border-slate-200 hover:shadow-md transition-all duration-200">
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-slate-700">{suggestion.name}</h3>
+                        <Badge variant={suggestion.difficulty === 'easy' ? 'secondary' : 'outline'} className="text-xs">
+                          {suggestion.difficulty}
+                        </Badge>
                       </div>
-                    ))}
+                      <p className="text-sm text-slate-600 mb-3">{suggestion.description}</p>
+                      
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <Zap className="h-3 w-3" />
+                          <span>Trigger: {suggestion.trigger}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {suggestion.actions.map((action, i) => (
+                            <React.Fragment key={i}>
+                              <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
+                                {action}
+                              </span>
+                              {i < suggestion.actions.length - 1 && (
+                                <ArrowRight className="h-3 w-3 text-slate-400 self-center" />
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-green-600 font-medium">💡 {suggestion.impact}</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <span className="font-medium">Trigger:</span>
-                  <span className="capitalize">{suggestion.trigger_type.replace('_', ' ')}</span>
+                  <Button
+                    size="sm"
+                    onClick={() => createWorkflowMutation.mutate(suggestion)}
+                    disabled={createWorkflowMutation.isPending}
+                    className="w-full bg-slate-900 hover:bg-slate-800 mt-3"
+                  >
+                    Create This Workflow
+                  </Button>
                 </div>
-
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onApply(suggestion);
-                  }}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                  size="sm"
-                >
-                  <ChevronRight className="h-4 w-4 mr-2" />
-                  Use This Template
-                </Button>
-              </div>
-            )}
-          </div>
-        ))}
+              </Card>
+            </motion.div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
