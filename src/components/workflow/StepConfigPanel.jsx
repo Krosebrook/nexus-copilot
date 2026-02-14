@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import IntegrationActionStep from './IntegrationActionStep';
 
 const ACTION_TYPES = [
   { value: 'send_notification', label: 'Send Notification' },
@@ -21,7 +22,7 @@ const ACTION_TYPES = [
   { value: 'update_entity', label: 'Update Entity Record' },
 ];
 
-export default function StepConfigPanel({ step, workflow, onUpdate, onClose }) {
+export default function StepConfigPanel({ step, workflow, onUpdate, onClose, orgId }) {
   const [localStep, setLocalStep] = useState(step);
 
   const handleSave = () => {
@@ -267,6 +268,22 @@ export default function StepConfigPanel({ step, workflow, onUpdate, onClose }) {
                   </p>
                 </div>
               </>
+            )}
+
+            {localStep.config?.action === 'integration_action' && orgId && (
+              <IntegrationActionStep
+                config={localStep.config}
+                onChange={(integrationConfig) => {
+                  setLocalStep({
+                    ...localStep,
+                    config: {
+                      ...localStep.config,
+                      ...integrationConfig
+                    }
+                  });
+                }}
+                orgId={orgId}
+              />
             )}
           </TabsContent>
 
