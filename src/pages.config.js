@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import ActivityLog from './pages/ActivityLog';
 import AgentBuilder from './pages/AgentBuilder';
 import Analytics from './pages/Analytics';
 import Approvals from './pages/Approvals';
@@ -62,11 +63,11 @@ import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import SystemHealth from './pages/SystemHealth';
 import WorkflowBuilder from './pages/WorkflowBuilder';
-import ActivityLog from './pages/ActivityLog';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "ActivityLog": ActivityLog,
     "AgentBuilder": AgentBuilder,
     "Analytics": Analytics,
     "Approvals": Approvals,
@@ -82,7 +83,6 @@ export const PAGES = {
     "Settings": Settings,
     "SystemHealth": SystemHealth,
     "WorkflowBuilder": WorkflowBuilder,
-    "ActivityLog": ActivityLog,
 }
 
 export const pagesConfig = {
