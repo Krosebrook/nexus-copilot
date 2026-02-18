@@ -99,12 +99,12 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         {/* Header */}
-        <div className="flex items-start justify-between mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8 sm:mb-12">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-slate-700">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-700">
                 Welcome back{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}
               </h1>
               {currentOrg && <PlanBadge plan={currentOrg.plan} />}
@@ -113,8 +113,8 @@ export default function Dashboard() {
               Here's what's happening with your team
             </p>
           </div>
-          <Link to={createPageUrl('Copilot')}>
-            <Button className="bg-slate-900 hover:bg-slate-800 shadow-sm gap-2">
+          <Link to={createPageUrl('Copilot')} className="w-full sm:w-auto">
+            <Button className="bg-slate-900 hover:bg-slate-800 shadow-sm gap-2 w-full sm:w-auto">
               <AIGlyph size="sm" className="text-white" />
               Open Copilot
               <kbd className="hidden sm:inline-flex px-1.5 py-0.5 text-xs bg-slate-700 text-slate-300 rounded">
@@ -126,13 +126,13 @@ export default function Dashboard() {
 
         {/* Getting Started Checklist */}
         {currentOrg && user && (
-          <div className="mb-12">
+          <div className="mb-8 sm:mb-12">
             <GettingStartedChecklist orgId={currentOrg.id} userEmail={user.email} />
           </div>
         )}
 
         {/* Alert Hero */}
-        <div className="mb-12">
+        <div className="mb-8 sm:mb-12">
           <AlertHero orgId={currentOrg?.id} />
         </div>
 

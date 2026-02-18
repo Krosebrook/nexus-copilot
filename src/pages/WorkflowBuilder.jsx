@@ -296,12 +296,12 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
       </div>
     }>
       <div className="min-h-screen bg-slate-50">
-        <div className="flex h-screen">
-          {/* Workflow List Sidebar */}
-          <div className="w-80 bg-white border-r border-slate-200 overflow-auto">
-            <div className="p-6 border-b border-slate-200">
+        <div className="flex flex-col lg:flex-row h-screen">
+          {/* Workflow List Sidebar - Hidden on mobile */}
+          <div className="hidden lg:block w-80 bg-white border-r border-slate-200 overflow-auto">
+            <div className="p-4 sm:p-6 border-b border-slate-200">
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-lg font-semibold text-slate-900">Workflows</h1>
+                <h1 className="text-base sm:text-lg font-semibold text-slate-900">Workflows</h1>
                 {can('create_workflows') && (
                   <Button
                     size="sm"
@@ -357,25 +357,25 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
           <div className="flex-1 flex flex-col">
             {selectedWorkflow ? (
               <>
-                <div className="bg-white border-b border-slate-200 p-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">{selectedWorkflow.name}</h2>
+                <div className="bg-white border-b border-slate-200 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-base sm:text-lg font-semibold text-slate-900 truncate">{selectedWorkflow.name}</h2>
                     <p className="text-sm text-slate-500 capitalize">
                       {selectedWorkflow.trigger_type.replace('_', ' ')} trigger • 
                       {selectedWorkflow.is_active ? 'Active' : 'Inactive'} • 
                       {selectedWorkflow.execution_count || 0} runs
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {can('edit_workflows') && (
                       <>
-                        <Button variant="outline" onClick={() => setShowTriggerDialog(true)}>
-                          Configure Trigger
+                        <Button variant="outline" size="sm" onClick={() => setShowTriggerDialog(true)}>
+                          <span className="hidden sm:inline">Configure </span>Trigger
                         </Button>
                         {!isEditing ? (
-                          <Button onClick={() => setIsEditing(true)}>Edit Workflow</Button>
+                          <Button size="sm" onClick={() => setIsEditing(true)}><span className="hidden sm:inline">Edit </span>Workflow</Button>
                         ) : (
-                          <Button onClick={() => {
+                          <Button size="sm" onClick={() => {
                             updateWorkflowMutation.mutate({
                               workflowId: selectedWorkflow.id,
                               updates: selectedWorkflow,
@@ -418,7 +418,7 @@ Each suggestion needs a label (step name) and reason (why it's useful).`,
                       onUpdate={(updates) => setSelectedWorkflow({ ...selectedWorkflow, ...updates })}
                     />
                   </div>
-                  <div className="w-80 border-l border-slate-200 bg-white p-4 overflow-auto">
+                  <div className="hidden lg:block w-80 border-l border-slate-200 bg-white p-4 overflow-auto">
                     {isEditing ? (
                       <WorkflowSidebar workflow={selectedWorkflow} />
                     ) : (

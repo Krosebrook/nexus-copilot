@@ -303,25 +303,27 @@ export default function Knowledge() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center">
-              <Book className="h-5 w-5 text-slate-600" />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+              <Book className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600" />
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Knowledge Base</h1>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-semibold text-slate-900">Knowledge Base</h1>
               <p className="text-sm text-slate-500">Train your Copilot with organization-specific knowledge</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-1 bg-white">
+          <div className="flex gap-2 flex-wrap justify-end">
+            <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-1 bg-white shrink-0">
               <Button
                 variant={viewMode === 'list' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('list')}
+                className="px-2 sm:px-3"
               >
-                List
+                <span className="hidden sm:inline">List</span>
+                <span className="sm:hidden">☰</span>
               </Button>
               <Button
                 variant={viewMode === 'graph' ? 'default' : 'ghost'}
@@ -339,9 +341,9 @@ export default function Knowledge() {
               </Button>
             </div>
             <PermissionGuard permission="create_knowledge">
-              <Button onClick={() => setAddDialog({ open: true, type: 'manual' })}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Knowledge
+              <Button onClick={() => setAddDialog({ open: true, type: 'manual' })} size="sm" className="shrink-0">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Knowledge</span>
               </Button>
             </PermissionGuard>
           </div>
@@ -397,8 +399,8 @@ export default function Knowledge() {
         ) : (
           <div className="space-y-3">
             {knowledgeBase.map((kb) => (
-              <div key={kb.id} className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition-all">
-                <div className="flex items-start gap-4">
+              <div key={kb.id} className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-all">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-medium text-slate-900">{kb.title}</h3>
