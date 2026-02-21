@@ -17,6 +17,7 @@ import AgentToolManager from '@/components/agents/AgentToolManager';
 import AgentLearningInsights from '@/components/agents/AgentLearningInsights';
 import ExecutionFeedbackDialog from '@/components/agents/ExecutionFeedbackDialog';
 import ExecutionPlanViewer from '@/components/agents/ExecutionPlanViewer';
+import ProactiveTriggersPanel from '@/components/agents/ProactiveTriggersPanel';
 import PermissionGuard from '@/components/rbac/PermissionGuard';
 
 export default function AgentBuilder() {
@@ -351,9 +352,10 @@ function EditAgentDialog({ agent, orgId, onClose, onUpdate }) {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 w-full">
+          <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="persona">Persona</TabsTrigger>
             <TabsTrigger value="tools">Tools</TabsTrigger>
+            <TabsTrigger value="triggers">Triggers</TabsTrigger>
             <TabsTrigger value="learning">Learning</TabsTrigger>
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
           </TabsList>
@@ -371,6 +373,13 @@ function EditAgentDialog({ agent, orgId, onClose, onUpdate }) {
               orgId={orgId}
               currentTools={agent.available_tools || []}
               onUpdate={onUpdate}
+            />
+          </TabsContent>
+
+          <TabsContent value="triggers" className="mt-4">
+            <ProactiveTriggersPanel
+              agent={agent}
+              orgId={orgId}
             />
           </TabsContent>
 
