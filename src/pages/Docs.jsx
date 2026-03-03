@@ -5,6 +5,183 @@ import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from 'react-markdown';
 
 const DOCUMENTATION = {
+  usecases: `# Use Cases
+
+This platform serves three distinct user rings — each with different goals, workflows, and value drivers. Understanding which ring you operate in helps you get the most out of every feature.
+
+---
+
+## 🔵 Inner Loop — Builders & Configurators
+
+> **Who**: Developers, AI engineers, ops leads, and power users who build, configure, and maintain the platform for others.
+
+The **inner loop** is the build-and-iterate cycle. Inner loop users spend time constructing agents, designing workflows, curating knowledge, and tuning the system's behavior. Their work multiplies the productivity of everyone else.
+
+### Use Cases
+
+#### 1. Build a Proactive Data Anomaly Agent
+A data engineer notices that latency spikes in the query pipeline go undetected for hours. They:
+1. Create an Agent with a "Data Analysis" persona and \`entity_crud\` + \`api_calls\` tools
+2. Add a **Proactive Trigger** of type \`data_anomaly\` watching \`Query.latency_ms\` with a 2σ threshold
+3. Set the task template: *"Latency anomaly detected. Analyze recent queries, identify root cause, and post a Slack summary."*
+4. Set cooldown to 30 minutes, enable email notifications
+
+**Result**: The agent autonomously wakes up when latency degrades and surfaces a root-cause report before any human notices.
+
+---
+
+#### 2. Build a Knowledge-Enriched Onboarding Workflow
+An ops lead wants new hires to get instant answers about internal processes. They:
+1. Upload SOPs, handbook PDFs, and runbook URLs to the **Knowledge Base**
+2. Link related articles (e.g., "Expense Policy" → "Reimbursement Form" → "Finance Contact")
+3. Create a **Workflow**: Trigger on new member invite → Copilot query "Summarize onboarding checklist for {name}" → Send welcome email with AI-generated summary
+
+**Result**: Every new member gets a personalized, context-aware onboarding email within minutes of joining.
+
+---
+
+#### 3. Configure Role-Based Access for a New Team
+A platform admin onboards a client-services team with read-only access:
+1. Invite members via **Settings → Members** with role \`Viewer\`
+2. Ensure sensitive workflow management is wrapped with \`PermissionGuard permission="manage_workflows"\`
+3. Set Agent approval requirements on any actions touching production data
+
+**Result**: The team can use Copilot and view analytics without risk of accidentally modifying workflows or integrations.
+
+---
+
+#### 4. Tune Agent Learning from Feedback
+An AI engineer reviews the Agent Learning dashboard and notices an \`avoid\` pattern forming around a tool the agent keeps misusing:
+1. Opens **Agent Builder → [Agent] → Learning tab**
+2. Reviews collected correction patterns and their confidence scores
+3. Adds a specific custom instruction to the agent persona: *"Never call the webhook tool before validating the payload schema"*
+4. Sets \`confidence_threshold\` to 80 to make the agent more conservative
+
+**Result**: The agent's behavior tightens over time with no retraining — just structured human feedback.
+
+---
+
+## 🟡 Outer Loop — Operators & Admins
+
+> **Who**: Team leads, department managers, IT administrators, and operations managers who oversee the platform day-to-day and drive adoption across their org.
+
+The **outer loop** is the orchestration cycle — scheduling, monitoring, approving, and governing. Outer loop users don't build the infrastructure but they run it, ensuring agents and workflows operate within organizational bounds.
+
+### Use Cases
+
+#### 1. Morning Operations Briefing (Automated)
+An ops manager sets up a daily briefing that runs without any manual effort:
+1. **Workflow Trigger**: Schedule — 8:00 AM, Mon–Fri
+2. **Step 1**: Copilot query → *"Summarize yesterday's workflow executions, failed steps, and agent trigger activity"*
+3. **Step 2**: Send email digest to ops-team@company.com
+4. **Step 3**: Post condensed version to #ops-alerts Slack channel
+
+**Result**: The entire ops team starts the day aligned on system health with zero manual reporting.
+
+---
+
+#### 2. Approval Governance for Sensitive Agent Actions
+A compliance manager needs to ensure agents don't take irreversible actions autonomously:
+1. Opens **Agent Builder → [Agent] → Approvals tab**
+2. Enables **Require Human Approval** on data deletion and external API call steps
+3. Reviews the **Approvals** page each morning — approves or rejects with documented reasoning
+4. Monitors the **Audit Log** for all approval decisions and agent actions
+
+**Result**: Full auditability with a clear paper trail for regulatory compliance.
+
+---
+
+#### 3. Integration Health Dashboard Review
+An IT admin does a weekly integration health review:
+1. Navigates to **Integration Health** page
+2. Identifies integrations with health scores below 70
+3. Triggers a bulk re-sync for degraded connections
+4. Reviews error logs for any webhook failures
+5. Sets up a **Metric Threshold Trigger** on sync failure count to auto-alert the team
+
+**Result**: Integration reliability stays high without manual polling — issues surface before they impact users.
+
+---
+
+#### 4. Analytics-Driven Knowledge Gap Analysis
+A team lead wants to know what users are asking that the knowledge base doesn't answer well:
+1. Opens **Analytics** and reviews top Copilot queries with low satisfaction ratings
+2. Cross-references with Knowledge Base usage counts (low \`usage_count\` = underutilized or missing content)
+3. Creates new knowledge articles for the top 5 unanswered topics
+4. Assigns article maintenance to subject matter experts
+
+**Result**: The knowledge base continuously improves based on real usage signals rather than guesswork.
+
+---
+
+## 🟢 End User Loop — Everyday Users
+
+> **Who**: Employees, frontline workers, analysts, customer support reps, and anyone who uses the platform to get work done — without needing to configure anything.
+
+The **end user loop** is the consumption cycle. End users interact primarily through Copilot, receiving answers, surfacing knowledge, and triggering pre-built workflows. They benefit from what inner and outer loop users have built.
+
+### Use Cases
+
+#### 1. Instant Answer to a Complex Policy Question
+A new sales rep needs to know the discount approval process before a call:
+- Opens **Copilot**, types: *"What's the process to get a discount over 20% approved?"*
+- Copilot searches the knowledge base, finds the pricing policy article and the approval workflow doc
+- Returns a step-by-step answer citing both sources in under 3 seconds
+
+**Result**: The rep gets the right answer immediately — no Slack threads, no waiting for a manager.
+
+---
+
+#### 2. Self-Service Data Lookup
+An analyst needs last quarter's KPIs without opening a BI tool:
+- Types: *"What was our average query response latency in Q4 and how does it compare to Q3?"*
+- Copilot accesses integration context from connected analytics services
+- Returns a comparison with trend commentary and flags an anomaly worth investigating
+
+**Result**: Instant data-driven insight without switching tools or writing queries.
+
+---
+
+#### 3. Save and Share a Key Research Summary
+A team member researches competitive positioning via Copilot:
+1. Asks Copilot to summarize three competitors' recent product updates (with internet search enabled)
+2. **Saves** the query for future reference
+3. Shares the URL with the team via Slack
+
+**Result**: Research is captured and shareable in one workflow — no separate document needed.
+
+---
+
+#### 4. Trigger an Agent Task on Demand
+A customer support lead notices an unusual pattern in ticket volume:
+- Opens **Agent Builder**, selects the "Support Analyst Agent"
+- Clicks **Test Agent**, enters: *"Analyze support ticket themes from this week and identify the top 3 recurring issues"*
+- Agent executes autonomously, queries the ticketing integration, and returns a structured report
+
+**Result**: A non-technical user delegates a multi-step data task to an AI agent in 30 seconds.
+
+---
+
+#### 5. Proactive Notification from an Autonomous Agent
+A product manager didn't ask for anything — but receives an email at 9:05 AM:
+
+> *"Your 'Sprint Tracker' agent detected that open issue count exceeded 50 (threshold: 40). Here's a summary of the 12 new issues opened since yesterday, grouped by severity. Recommended: prioritize 3 critical bugs before the sprint review."*
+
+**Result**: The user gets relevant, actionable insight before they even opened their laptop — driven entirely by a proactive trigger configured once by the inner loop team.
+
+---
+
+## Summary Matrix
+
+| Dimension | Inner Loop | Outer Loop | End User Loop |
+|---|---|---|---|
+| **Primary action** | Build & configure | Govern & monitor | Query & consume |
+| **Key features** | Agent Builder, Workflow Canvas, Knowledge Editor | Approvals, Audit Log, Analytics, Integrations | Copilot, Saved Queries, Agent Test |
+| **Time horizon** | Days to weeks | Daily / weekly | Real-time / on-demand |
+| **Value driver** | Capability creation | Reliability & compliance | Productivity & insight |
+| **Proactive AI role** | Define triggers & learning | Approve & review | Receive autonomous outputs |
+| **Technical level** | High | Medium | Low |`,
+
   overview: `# AI Copilot Platform Documentation
 
 Welcome to the AI Copilot Platform — an intelligent workspace for AI agents, workflow automation, and organizational knowledge management.
@@ -531,6 +708,7 @@ const response = await base44.integrations.Core.InvokeLLM({
 };
 
 const SECTIONS = [
+  { id: 'usecases', label: 'Use Cases', icon: Sparkles },
   { id: 'overview', label: 'Overview', icon: Book },
   { id: 'copilot', label: 'Copilot', icon: Sparkles },
   { id: 'agents', label: 'AI Agents', icon: Bot },
