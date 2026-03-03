@@ -720,7 +720,7 @@ const SECTIONS = [
 ];
 
 export default function Docs() {
-  const [activeSection, setActiveSection] = useState('overview');
+  const [activeSection, setActiveSection] = useState('usecases');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const activeContent = DOCUMENTATION[activeSection];
