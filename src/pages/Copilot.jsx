@@ -522,7 +522,7 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
               <EmptyState onSuggestionClick={handleSuggestionClick} />
             ) : (
               <div className="space-y-3">
-                <AnimatePresence mode="popLayout">
+                <AnimatePresence mode="wait">
                   {isProcessing && (
                     <motion.div
                       key="processing"
