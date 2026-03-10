@@ -808,7 +808,7 @@ Once the Getting Started checklist is dismissed, new orgs with no knowledge/agen
 
 ### 3.6 ~~No Suggested Follow-Up Questions~~ ✅ Resolved
 
-After every Copilot response, 2–3 follow-up questions are automatically generated using the LLM and displayed at the bottom of the `ResponseCard`. Clicking one immediately submits it as the next query.
+After every Copilot response, 2–3 follow-up questions are automatically generated using the LLM and displayed at the bottom of the ResponseCard component. Clicking one immediately submits it as the next query.
 
 ---
 
