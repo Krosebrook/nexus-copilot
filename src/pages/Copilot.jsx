@@ -545,6 +545,7 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                         query={selectedQuery}
                         onSave={(q) => toggleSaveMutation.mutate(q)}
                         onFeedback={(q, feedback) => submitFeedbackMutation.mutate({ query: q, feedback })}
+                        onFollowUp={(text) => handleSubmit(text)}
                       />
                       {preferences?.copilot_show_sources && (
                         <SuggestedArticles 
