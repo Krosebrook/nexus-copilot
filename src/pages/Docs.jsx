@@ -896,18 +896,18 @@ The current typography scale is functionally correct but lacks visual rhythm:
 
 Based on all findings, here are the top 10 improvements ranked by impact vs effort:
 
-| Priority | Improvement | Impact | Effort |
-|---|---|---|---|
-| 🔴 **P0** | LLM response streaming | Very High | High |
-| 🔴 **P0** | Shared org/user Context provider | Very High | Medium |
-| 🔴 **P0** | Wire semantic search into Copilot query path | Very High | Low |
-| 🟡 **P1** | Real-time Query subscriptions in Copilot | High | Low |
-| 🟡 **P1** | Async/non-blocking knowledge usage tracking | High | Low |
-| 🟡 **P1** | WCAG 2.2 aria-labels on icon buttons | High | Low |
-| 🟡 **P1** | Optimistic UI for save/toggle mutations | Medium | Low |
-| 🟢 **P2** | Suggested follow-up questions in Copilot | Medium | Medium |
-| 🟢 **P2** | New Conversation button + session switcher | Medium | Low |
-| 🟢 **P2** | Usage/quota visibility in Dashboard | Medium | Low |`,
+| Priority | Improvement | Impact | Effort | Status |
+|---|---|---|---|---|
+| 🔴 **P0** | LLM response streaming | Very High | High | Pending |
+| 🔴 **P0** | Shared org/user Context provider | Very High | Medium | Pending |
+| 🔴 **P0** | Wire semantic search into Copilot query path | Very High | Low | ✅ Done |
+| 🟡 **P1** | Real-time Query subscriptions in Copilot | High | Low | ✅ Done |
+| 🟡 **P1** | Async/non-blocking knowledge usage tracking | High | Low | ✅ Done |
+| 🟡 **P1** | WCAG 2.2 aria-labels on icon buttons | High | Low | ✅ Done |
+| 🟡 **P1** | Optimistic UI for save/toggle mutations | Medium | Low | ✅ Done |
+| 🟢 **P2** | Suggested follow-up questions in Copilot | Medium | Medium | ✅ Done |
+| 🟢 **P2** | New Conversation button + session switcher | Medium | Low | ✅ Done |
+| 🟢 **P2** | Usage/quota visibility in Dashboard | Medium | Low | Pending |`,
 
   api: `# Data Models & SDK Reference
 
