@@ -790,9 +790,9 @@ Every competing AI product streams. Users have been conditioned to see tokens ap
 
 As described in §2.3, this creates both a performance gap and a developer experience gap — every new page requires copy-pasting the same auth/org boilerplate.
 
-### 3.3 Copilot Has No "New Conversation" Button
+### 3.3 ~~Copilot Has No "New Conversation" Button~~ ✅ Resolved
 
-Sessions are auto-created, but there's no explicit way for a user to start a fresh context window. Power users want to segment topics. The history sidebar shows all queries but doesn't group them by session or let users switch between sessions.
+A **New** button now appears in the Copilot header. Clicking it closes the current session, creates a new one, and clears the selected query — giving users an explicit fresh context window. The session query count is also displayed inline.
 
 ### 3.4 Agent Execution Has No Live Progress in the Main UI
 
