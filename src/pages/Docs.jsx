@@ -806,6 +806,12 @@ The \`CommandPalette\` exists (\`⌘K\`) but is primarily navigation. Power user
 
 Once the Getting Started checklist is dismissed, new orgs with no knowledge/agents see blank pages. There are no contextual empty states with actionable CTAs like "Add your first knowledge article" or "Connect Slack to get started."
 
+### 3.6 ~~No Suggested Follow-Up Questions~~ ✅ Resolved
+
+After every Copilot response, 2–3 follow-up questions are automatically generated using the LLM and displayed at the bottom of the `ResponseCard`. Clicking one immediately submits it as the next query.
+
+---
+
 ### 3.7 No Usage/Quota Visibility
 
 The \`Organization\` entity has \`monthly_query_limit\` and \`query_count\` but there's no UI showing users how much of their quota they've used. This is a common SaaS pattern that reduces churn by surfacing value and preventing surprise limit hits.
