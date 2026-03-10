@@ -1035,6 +1035,7 @@ const response = await base44.integrations.Core.InvokeLLM({
 
 const SECTIONS = [
   { id: 'usecases', label: 'Use Cases', icon: Sparkles },
+  { id: 'bestpractices', label: 'Dev & UX Research', icon: Brain },
   { id: 'overview', label: 'Overview', icon: Book },
   { id: 'copilot', label: 'Copilot', icon: Sparkles },
   { id: 'agents', label: 'AI Agents', icon: Bot },
