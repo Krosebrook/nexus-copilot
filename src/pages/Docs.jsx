@@ -861,7 +861,7 @@ Based on extensive UX research on conversational AI interfaces (Reddit r/UXDesig
 
 **Pattern 2 — Typing Indicators vs Spinners**: Replace the generic "Analyzing your question..." spinner with a skeleton that matches the expected response shape. Users interpret structured skeletons as faster responses even at identical latency.
 
-**Pattern 3 — Suggested Follow-Ups**: After every response, show 2–3 suggested follow-up questions derived from the response content. ChatGPT, Perplexity, and Gemini all do this. It increases session depth by 35–40% (Perplexity internal data, 2024).
+**Pattern 3 — Suggested Follow-Ups** ✅ Implemented: After every response, 2–3 follow-up questions are generated from the response and rendered at the bottom of each `ResponseCard`. Clicking submits immediately. ChatGPT, Perplexity, and Gemini all do this — it increases session depth by 35–40% (Perplexity internal data, 2024).
 
 **Pattern 4 — Conversation Continuity Signals**: When session context is being used, show a subtle indicator ("Using context from 3 previous messages"). This builds user trust that the AI "remembers" rather than appearing stateless.
 
