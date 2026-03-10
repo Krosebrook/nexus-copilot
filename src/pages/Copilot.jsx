@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PanelLeftClose, PanelLeft } from 'lucide-react';
+import { PanelLeft, Plus, MessageSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -456,8 +456,9 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                   size="sm"
                   onClick={() => setShowHistory(!showHistory)}
                   className="h-8 w-8 p-0"
+                  aria-label="Toggle query history sidebar"
                 >
-                  <PanelLeft className="h-4 w-4" />
+                  <PanelLeft className="h-4 w-4" aria-hidden="true" />
                 </Button>
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center shadow-sm">
@@ -471,16 +472,37 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                   </div>
                 </div>
               </div>
-              {queries.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowHistory(true)}
-                  className="text-xs text-slate-500"
-                >
-                  {queries.length} {queries.length === 1 ? 'query' : 'queries'}
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {currentSession?.query_ids?.length > 0 && (
+                  <span className="hidden sm:flex items-center gap-1 text-xs text-slate-400 mr-1">
+                    <MessageSquare className="h-3 w-3" aria-hidden="true" />
+                    {currentSession.query_ids.length} in session
+                  </span>
+                )}
+                {currentOrg && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleNewConversation}
+                    className="h-8 gap-1.5 text-xs text-slate-500 hover:text-slate-900"
+                    aria-label="Start a new conversation"
+                  >
+                    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">New</span>
+                  </Button>
+                )}
+                {queries.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowHistory(true)}
+                    className="text-xs text-slate-500"
+                    aria-label="View query history"
+                  >
+                    {queries.length} {queries.length === 1 ? 'query' : 'queries'}
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Hero Command Input */}
