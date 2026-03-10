@@ -222,13 +222,21 @@ The Copilot is your primary AI interface. It pulls context from integrations, th
 ## Core Features
 
 ### Session Memory
-Queries are grouped into sessions. The last 3 queries are included as context in each new request, enabling natural back-and-forth conversation.
+Queries are grouped into sessions. The last 3 queries are included as context in each new request, enabling natural back-and-forth conversation. Use the **New** button in the header to start a fresh context window and segment topics.
 
-### Knowledge Integration
-For each query, Copilot automatically references:
-- Up to 3 relevant knowledge base articles (with linked articles for additional context)
+### Semantic Knowledge Retrieval
+For each query, Copilot automatically uses **semantic search** to find the most relevant knowledge base articles — not just the first 3. The \`knowledgeSemanticSearch\` backend function scores articles against the query so the context injected into the LLM is always topically relevant.
+
+It also includes:
+- Linked articles and backlinks for each matched article
 - All active integrations and their capabilities
 - Prior conversation history in the current session
+
+### Real-Time Response Updates
+Copilot subscribes to \`Query\` entity changes in real time via \`base44.entities.Query.subscribe()\`. As soon as a response is ready, it appears in the UI instantly — no polling or manual refresh needed.
+
+### Follow-Up Suggestions
+After every response, Copilot automatically generates 2–3 suggested follow-up questions based on the response content. Click any suggestion to submit it immediately as a new query, extending the conversation naturally.
 
 ### User Preferences
 Configure response behavior under **Copilot Settings**:
@@ -239,16 +247,18 @@ Configure response behavior under **Copilot Settings**:
 - **Internet Search**: Enable for queries about current events
 
 ### Query Management
-- **Save**: Bookmark important queries for later reference
+- **Save**: Bookmark important queries for later reference (optimistic UI — updates instantly)
 - **Copy**: Copy raw response to clipboard
 - **Feedback**: 1–5 star rating + comment to improve quality
 - **History Sidebar**: Browse all past queries with search and filter
+- **New Conversation**: Start a fresh session to reset context
 
 ## Tips
 
 - Be specific: "Summarize last week's GitHub PRs in the data team" beats "what happened recently"
 - Use Copilot to explore knowledge: "What do we know about onboarding?"
 - Chain questions — Copilot remembers your session context
+- Click follow-up suggestions to naturally deepen a topic
 - Enable Internet Search only when needed (adds latency)
 
 ## Keyboard Shortcuts
