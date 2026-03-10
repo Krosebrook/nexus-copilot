@@ -605,7 +605,7 @@ Before diving into recommendations, here's what was found in the current impleme
 
 ### 1.1 TanStack Query: You're Leaving Performance on the Table
 
-**Current pattern** — most pages do a sequential waterfall: `auth.me()` → `Membership.filter()` → `Organization.filter()` → then queries enable. This adds 300–600ms on every mount.
+**Current pattern** — most pages do a sequential waterfall: \`auth.me()\` → \`Membership.filter()\` → \`Organization.filter()\` → then queries enable. This adds 300–600ms on every mount.
 
 **Better approach — parallel prefetching:**
 \`\`\`javascript
