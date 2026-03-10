@@ -560,7 +560,7 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
                         key={query.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        layout
+                        transition={{ duration: 0.15 }}
                       >
                         <ResponseCard
                           query={query}
