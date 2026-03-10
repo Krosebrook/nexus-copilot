@@ -236,6 +236,25 @@ A: ${query.response?.slice(0, 500)}`,
         </div>
       )}
 
+      {/* Follow-up suggestions */}
+      {!compact && followUps.length > 0 && (
+        <div className="px-4 pb-3 border-t border-slate-100 pt-3">
+          <p className="text-xs text-slate-400 mb-2">Follow-up questions</p>
+          <div className="flex flex-col gap-1.5">
+            {followUps.map((q, i) => (
+              <button
+                key={i}
+                onClick={() => onFollowUp?.(q)}
+                className="flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 text-left group/fu"
+              >
+                <CornerDownRight className="h-3 w-3 text-slate-300 group-hover/fu:text-slate-500 flex-shrink-0" aria-hidden="true" />
+                <span className="hover:underline underline-offset-2">{q}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Inline Actions */}
       <div className="px-4 pb-4 pt-3 border-t border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-1">
