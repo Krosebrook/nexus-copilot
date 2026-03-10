@@ -296,16 +296,53 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
     },
   });
 
-  // Save/unsave query
+  // Save/unsave query — optimistic update
   const toggleSaveMutation = useMutation({
     mutationFn: async (query) => {
       await base44.entities.Query.update(query.id, { is_saved: !query.is_saved });
       return { ...query, is_saved: !query.is_saved };
     },
-    onSuccess: () => {
+    onMutate: async (query) => {
+      await queryClient.cancelQueries({ queryKey: ['queries', currentOrg?.id] });
+      const previous = queryClient.getQueryData(['queries', currentOrg?.id]);
+      queryClient.setQueryData(['queries', currentOrg?.id], (old = []) =>
+        old.map(q => q.id === query.id ? { ...q, is_saved: !q.is_saved } : q)
+      );
+      if (selectedQuery?.id === query.id) {
+        setSelectedQuery(prev => ({ ...prev, is_saved: !prev.is_saved }));
+      }
+      return { previous };
+    },
+    onError: (_, __, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['queries', currentOrg?.id], ctx.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['queries'] });
     },
   });
+
+  // Start a new conversation session
+  const handleNewConversation = async () => {
+    try {
+      const user = await base44.auth.me();
+      if (currentSession) {
+        await base44.entities.ConversationSession.update(currentSession.id, { is_active: false });
+      }
+      const newSession = await base44.entities.ConversationSession.create({
+        org_id: currentOrg.id,
+        user_email: user.email,
+        title: 'New conversation',
+        query_ids: [],
+        is_active: true,
+        last_activity: new Date().toISOString(),
+      });
+      setCurrentSession(newSession);
+      setSelectedQuery(null);
+      toast.success('New conversation started');
+    } catch (e) {
+      toast.error('Failed to start new conversation');
+    }
+  };
 
   const detectResponseType = (prompt) => {
     const lower = prompt.toLowerCase();
