@@ -124,25 +124,27 @@ A: ${query.response?.slice(0, 500)}`,
             size="sm"
             onClick={handleCopy}
             className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
+            aria-label="Copy response to clipboard"
           >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            {copied ? <Check className="h-4 w-4 text-green-500" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleSave}
             className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
+            aria-label={query.is_saved ? 'Remove from saved' : 'Save query'}
           >
             {query.is_saved ? (
-              <BookmarkCheck className="h-4 w-4 text-amber-500" />
+              <BookmarkCheck className="h-4 w-4 text-amber-500" aria-hidden="true" />
             ) : (
-              <Bookmark className="h-4 w-4" />
+              <Bookmark className="h-4 w-4" aria-hidden="true" />
             )}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600">
-                <MoreHorizontal className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600" aria-label="More options">
+                <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
