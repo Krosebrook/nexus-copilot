@@ -153,13 +153,25 @@ export default function Copilot() {
         integrationContext = `\n\n${contextParts.join('\n')}\n\nYou can reference these tools if relevant to the user's question.`;
       }
 
-      // Gather context from knowledge base with graph traversal
+      // Gather context from knowledge base — semantic search via backend function
       let knowledgeContext = '';
       const usedKnowledge = [];
 
       if (knowledgeBase.length > 0) {
-        // Find most relevant articles (could be enhanced with semantic search)
-        const relevantArticles = knowledgeBase.slice(0, 3);
+        // Use semantic search to find truly relevant articles
+        let relevantArticles = knowledgeBase.slice(0, 3); // fallback
+        try {
+          const searchResult = await base44.functions.invoke('knowledgeSemanticSearch', {
+            query: prompt,
+            org_id: currentOrg.id,
+            limit: 3
+          });
+          if (searchResult.data?.results?.length > 0) {
+            relevantArticles = searchResult.data.results;
+          }
+        } catch (e) {
+          // fall through to slice fallback
+        }
         const contextParts = ['Organization knowledge base:'];
 
         for (const kb of relevantArticles) {
@@ -229,14 +241,14 @@ Respond in a helpful, professional manner. Use markdown for formatting when appr
         context_refs: usedKnowledge.length > 0 ? usedKnowledge : undefined,
       });
 
-      // Update knowledge base usage
+      // Update knowledge base usage — fire-and-forget, non-blocking
       if (usedKnowledge.length > 0) {
-        for (const kbId of usedKnowledge) {
-          await base44.entities.KnowledgeBase.update(kbId, {
+        Promise.all(usedKnowledge.map(kbId =>
+          base44.entities.KnowledgeBase.update(kbId, {
             usage_count: (knowledgeBase.find(kb => kb.id === kbId)?.usage_count || 0) + 1,
             last_used_at: new Date().toISOString(),
-          });
-        }
+          })
+        )).catch(() => {}); // non-blocking
       }
 
       // Update or create session
