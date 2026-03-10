@@ -660,9 +660,9 @@ For the Copilot query list specifically, replace \`AnimatePresence mode="popLayo
 
 ---
 
-### 1.3 Real-Time Subscriptions: You Already Have Them — Use Them
+### 1.3 Real-Time Subscriptions ✅ Implemented in Copilot
 
-The Base44 SDK exposes \`entity.subscribe()\` but it's only used in \`ExecutionPlanViewer\`. This is a massive untapped advantage.
+The Base44 SDK exposes \`entity.subscribe()\`. It is now active in the Copilot page — \`Query\` updates are subscribed so completed responses surface immediately without polling. Still untapped in:
 
 **High-value subscription opportunities:**
 - **Copilot**: Subscribe to \`Query\` updates so a query result appears live when the backend function completes (eliminates polling/waiting)
