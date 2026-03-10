@@ -26,37 +26,28 @@ export default function Copilot() {
   
   const queryClient = useQueryClient();
 
-  // Get current user and org
+  // Get current user and org — parallel fetch (no waterfall)
   useEffect(() => {
     const fetchUserOrg = async () => {
       try {
-        const user = await base44.auth.me();
-        const memberships = await base44.entities.Membership.filter({ user_email: user.email, status: 'active' });
+        const [user, allMemberships] = await Promise.all([
+          base44.auth.me(),
+          base44.entities.Membership.filter({ status: 'active' })
+        ]);
+        const memberships = allMemberships.filter(m => m.user_email === user.email);
         if (memberships.length > 0) {
-          const orgs = await base44.entities.Organization.filter({ id: memberships[0].org_id });
-          if (orgs.length > 0) {
-            setCurrentOrg(orgs[0]);
-            
-            // Load user preferences
-            const prefs = await base44.entities.UserPreferences.filter({ 
-              user_email: user.email, 
-              org_id: orgs[0].id 
-            });
-            if (prefs.length > 0) {
-              setPreferences(prefs[0]);
-            }
-            
-            // Load or create active session
-            const sessions = await base44.entities.ConversationSession.filter({
+          const [orgs, prefs, sessions] = await Promise.all([
+            base44.entities.Organization.filter({ id: memberships[0].org_id }),
+            base44.entities.UserPreferences.filter({ user_email: user.email, org_id: memberships[0].org_id }),
+            base44.entities.ConversationSession.filter({
               user_email: user.email,
-              org_id: orgs[0].id,
+              org_id: memberships[0].org_id,
               is_active: true
-            }, '-last_activity', 1);
-            
-            if (sessions.length > 0) {
-              setCurrentSession(sessions[0]);
-            }
-          }
+            }, '-last_activity', 1)
+          ]);
+          if (orgs.length > 0) setCurrentOrg(orgs[0]);
+          if (prefs.length > 0) setPreferences(prefs[0]);
+          if (sessions.length > 0) setCurrentSession(sessions[0]);
         }
       } catch (e) {
         // User might not have org yet
@@ -68,9 +59,23 @@ export default function Copilot() {
   // Fetch queries
   const { data: queries = [], isLoading } = useQuery({
     queryKey: ['queries', currentOrg?.id],
-    queryFn: () => currentOrg ? base44.entities.Query.filter({ org_id: currentOrg.id }, '-created_date', 100) : [],
+    queryFn: () => currentOrg ? base44.entities.Query.filter({ org_id: currentOrg.id }, '-created_date', 50) : [],
     enabled: !!currentOrg,
+    staleTime: 30 * 1000, // 30s — don't refetch on every mount
   });
+
+  // Real-time subscription: update query result as soon as it completes
+  useEffect(() => {
+    if (!currentOrg) return;
+    const unsub = base44.entities.Query.subscribe((event) => {
+      if (event.type === 'update' && event.data?.status === 'completed') {
+        queryClient.invalidateQueries({ queryKey: ['queries', currentOrg.id] });
+        // If this is the query we're waiting on, show it immediately
+        setSelectedQuery(prev => prev?.id === event.id ? event.data : prev);
+      }
+    });
+    return unsub;
+  }, [currentOrg?.id]);
 
   // Fetch active integrations
   const { data: integrations = [] } = useQuery({
