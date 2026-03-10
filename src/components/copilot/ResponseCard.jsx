@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { 
   Copy, Check, Bookmark, BookmarkCheck, Share2, 
   MoreHorizontal, Clock, Zap, ChevronDown, ChevronUp, AlertTriangle,
-  ThumbsUp, ThumbsDown
+  ThumbsUp, ThumbsDown, CornerDownRight
 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,10 +32,33 @@ export default function ResponseCard({
   onSave, 
   onShare,
   onFeedback,
+  onFollowUp,
   compact = false 
 }) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(!compact);
+  const [followUps, setFollowUps] = useState([]);
+
+  // Generate follow-up suggestions after response is available
+  useEffect(() => {
+    if (!query.response || compact || followUps.length > 0) return;
+    let cancelled = false;
+    base44.integrations.Core.InvokeLLM({
+      prompt: `Given this Q&A, suggest 3 short follow-up questions a user might want to ask next. Be concise — max 10 words each. Return only the questions as a JSON array of strings.
+
+Q: ${query.prompt}
+A: ${query.response?.slice(0, 500)}`,
+      response_json_schema: {
+        type: 'object',
+        properties: { questions: { type: 'array', items: { type: 'string' } } }
+      }
+    }).then(res => {
+      if (!cancelled && res?.questions?.length) {
+        setFollowUps(res.questions.slice(0, 3));
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [query.id, query.response]);
 
   const typeConfig = TYPE_LABELS[query.response_type] || TYPE_LABELS.answer;
 
