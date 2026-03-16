@@ -58,6 +58,8 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      <Route path="/KnowledgeUpload" element={<LayoutWrapper currentPageName="KnowledgeUpload"><KnowledgeUpload /></LayoutWrapper>} />
+      <Route path="/AgentPerformance" element={<LayoutWrapper currentPageName="AgentPerformance"><AgentPerformance /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
