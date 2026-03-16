@@ -64,14 +64,20 @@ export default function Copilot() {
     staleTime: 30 * 1000, // 30s — don't refetch on every mount
   });
 
-  // Real-time subscription: update query result as soon as it completes
+  // Real-time subscription: stream query updates as they arrive
   useEffect(() => {
     if (!currentOrg) return;
     const unsub = base44.entities.Query.subscribe((event) => {
-      if (event.type === 'update' && event.data?.status === 'completed') {
+      if (event.type === 'update') {
+        // Immediately reflect any response/status change on the selected query
+        setSelectedQuery(prev => prev?.id === event.id ? { ...prev, ...event.data } : prev);
+        // Refresh the list when a query completes or is created
+        if (event.data?.status === 'completed' || event.type === 'create') {
+          queryClient.invalidateQueries({ queryKey: ['queries', currentOrg.id] });
+        }
+      }
+      if (event.type === 'create') {
         queryClient.invalidateQueries({ queryKey: ['queries', currentOrg.id] });
-        // If this is the query we're waiting on, show it immediately
-        setSelectedQuery(prev => prev?.id === event.id ? event.data : prev);
       }
     });
     return unsub;
