@@ -28,7 +28,7 @@ export default function AgentBuilder() {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [testTask, setTestTask] = useState('');
-  const [newAgent, setNewAgent] = useState({ name: '', description: '' });
+  const [newAgent, setNewAgent] = useState(null);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [completedExecution, setCompletedExecution] = useState(null);
   const [monitoringExecution, setMonitoringExecution] = useState(null);
