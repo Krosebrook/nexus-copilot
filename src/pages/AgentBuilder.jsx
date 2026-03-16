@@ -64,27 +64,17 @@ export default function AgentBuilder() {
     mutationFn: async (agentData) => {
       await base44.entities.Agent.create({
         org_id: currentOrg.id,
-        ...agentData,
-        capabilities: ['multi_step_planning', 'web_search'],
-        persona: {
-          role: '',
-          tone: 'professional',
-          expertise_areas: [],
-          custom_instructions: ''
-        },
-        performance_metrics: {
-          total_executions: 0,
-          success_rate: 0,
-          avg_execution_time_ms: 0,
-          user_satisfaction_avg: 0
-        }
+        name: agentData.name,
+        description: agentData.description,
+        capabilities: agentData.capabilities || ['multi_step_planning', 'web_search'],
+        persona: agentData.persona || { role: '', tone: 'professional', expertise_areas: [], custom_instructions: '' },
+        performance_metrics: { total_executions: 0, success_rate: 0, avg_execution_time_ms: 0, user_satisfaction_avg: 0 }
       });
     },
     onSuccess: () => {
       toast.success('Agent created');
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       setCreateDialogOpen(false);
-      setNewAgent({ name: '', description: '' });
     }
   });
 
