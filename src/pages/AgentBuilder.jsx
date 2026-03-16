@@ -19,6 +19,7 @@ import ExecutionFeedbackDialog from '@/components/agents/ExecutionFeedbackDialog
 import ExecutionPlanViewer from '@/components/agents/ExecutionPlanViewer';
 import ProactiveTriggersPanel from '@/components/agents/ProactiveTriggersPanel';
 import PermissionGuard from '@/components/rbac/PermissionGuard';
+import AgentCreationWizard from '@/components/agents/AgentCreationWizard';
 
 export default function AgentBuilder() {
   const [currentOrg, setCurrentOrg] = useState(null);
