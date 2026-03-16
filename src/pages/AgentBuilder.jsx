@@ -161,41 +161,13 @@ export default function AgentBuilder() {
             ))}
           </div>
 
-          {/* Create Agent Dialog */}
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Agent</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Agent Name</Label>
-                  <Input
-                    value={newAgent.name}
-                    onChange={(e) => setNewAgent({ ...newAgent, name: e.target.value })}
-                    placeholder="e.g., Data Analysis Agent"
-                  />
-                </div>
-                <div>
-                  <Label>Description</Label>
-                  <Textarea
-                    value={newAgent.description}
-                    onChange={(e) => setNewAgent({ ...newAgent, description: e.target.value })}
-                    placeholder="What does this agent do?"
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => createMutation.mutate(newAgent)}>
-                  Create Agent
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          {/* Create Agent Wizard */}
+          <AgentCreationWizard
+            open={createDialogOpen}
+            onOpenChange={setCreateDialogOpen}
+            onCreate={(data) => createMutation.mutate(data)}
+            isCreating={createMutation.isPending}
+          />
 
           {/* Test Agent Dialog */}
           <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
